@@ -2,6 +2,8 @@ import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import bgImage from "../../assets/sports-bg 2.png";
 import { mockUsers } from "../../data/mockUsers";
+import { useNavigate } from "react-router-dom";
+import { ROLES } from "../../constants/roles";
 
 const LoginPage = () => {
   const [view, setView] = useState<"login" | "forgot" | "otp" | "reset-password">("login");
@@ -27,7 +29,7 @@ const LoginPage = () => {
     newPassword: "",
     confirmPassword: "",
   });
-
+const navigate = useNavigate();
   const validateEmailOrMobile = (value: string) => {
     const trimmed = value.trim();
 
@@ -87,10 +89,33 @@ const LoginPage = () => {
       return;
     }
 
-    localStorage.setItem("user", JSON.stringify(user));
-    alert(`Welcome ${user.name}`);
     console.log("Login Success", user);
-    // navigate("/dashboard");
+    localStorage.setItem("user", JSON.stringify(user));
+
+alert(`Welcome ${user.name}`);
+
+console.log("Login Success", user);
+
+switch (user.role) {
+  case ROLES.superadmin:
+    navigate("/superadmin/dashboard");
+    break;
+
+  case ROLES.ADMIN:
+    navigate("/admin/dashboard");
+    break;
+
+  case ROLES.COACH:
+    navigate("/coach/dashboard");
+    break;
+
+  case ROLES.STUDENT:
+    navigate("/student/dashboard");
+    break;
+
+  default:
+    navigate("/");
+}
   };
 
   const handleForgotPasswordSubmit = (e: React.FormEvent) => {
