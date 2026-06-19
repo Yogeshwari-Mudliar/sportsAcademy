@@ -1,8 +1,9 @@
 :root {
-  --bg-app: #060f1f;
-  --bg-panel: #0b1830;
-  --bg-card: #0e1d38;
-  --bg-input: #0a1730;
+  --bg-app: #012551;
+  --bg-nav: #011a39;
+  --bg-panel: #15365f;
+  --bg-card: #15365f;
+  --bg-input: #011f45;
   --border-soft: rgba(255, 255, 255, 0.07);
   --border-softer: rgba(255, 255, 255, 0.04);
   --text-primary: #f8fafc;

@@ -1,6 +1,6 @@
 .dashboard-header {
   height: 76px;
-  background: #081428;
+  background: var(--bg-nav);
   border-bottom: 1px solid var(--border-soft);
   display: flex;
   align-items: center;
