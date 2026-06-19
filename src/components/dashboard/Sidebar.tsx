@@ -1,31 +1,100 @@
 // src/components/dashboard/Sidebar.tsx
 
-import { useSelector } from "react-redux";
-import { SIDEBAR_CONFIG } from "../../constants/sidebar";
-import MenuItem from "./MenuItem";
+import { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
+import { SUPER_ADMIN_SIDEBAR } from "../../constants/sidebar";
+import type { SidebarItem } from "../../constants/sidebar";
+import { useAppSelector } from "../../app/hooks";
 import "../../styles/common/sidebar.css";
 
-export default function Sidebar() {
-  const role = useSelector(
-    (state: any) => state.auth.user?.role
+function SidebarLink({ item }: { item: SidebarItem }) {
+  const location = useLocation();
+  const Icon = item.icon;
+
+  const childActive = item.children?.some((c) =>
+    location.pathname.startsWith(c.path)
   );
 
-  const menu =
-    SIDEBAR_CONFIG[
-      role as keyof typeof SIDEBAR_CONFIG
-    ] || [];
+  const [open, setOpen] = useState<boolean>(Boolean(childActive));
+
+  if (item.children && item.children.length > 0) {
+    return (
+      <div className="sidebar-group-item">
+        <button
+          type="button"
+          className={`sidebar-link ${childActive ? "active" : ""}`}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <Icon size={18} className="sidebar-icon" />
+          <span>{item.label}</span>
+          <ChevronDown
+            size={16}
+            className={`sidebar-caret ${open ? "open" : ""}`}
+          />
+        </button>
+
+        {open && (
+          <div className="sidebar-submenu">
+            {item.children.map((child) => (
+              <NavLink
+                key={child.path}
+                to={child.path}
+                end
+                className={({ isActive }) =>
+                  `sidebar-sublink ${isActive ? "active" : ""}`
+                }
+              >
+                {child.label}
+              </NavLink>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <aside className="sidebar">
-      <h2>Sports Academy</h2>
+    <NavLink
+      to={item.path}
+      end
+      className={({ isActive }) =>
+        `sidebar-link ${isActive ? "active" : ""}`
+      }
+    >
+      <Icon size={18} className="sidebar-icon" />
+      <span>{item.label}</span>
+    </NavLink>
+  );
+}
 
-      {menu.map((item) => (
-        <MenuItem
-          key={item.path}
-          label={item.label}
-          path={item.path}
-        />
-      ))}
+export default function Sidebar() {
+  const collapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
+
+  return (
+    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+      <div className="sidebar-brand">
+        <div className="sidebar-brand-logo">
+          <span className="sidebar-brand-mark">C</span>
+        </div>
+        <div className="sidebar-brand-text">
+          <h1>
+            CRICKET <span>ACADEMY</span>
+          </h1>
+          <p>SUPER ADMIN</p>
+        </div>
+      </div>
+
+      <nav className="sidebar-nav">
+        {SUPER_ADMIN_SIDEBAR.map((group) => (
+          <div key={group.title} className="sidebar-section">
+            <p className="sidebar-section-title">{group.title}</p>
+            {group.items.map((item) => (
+              <SidebarLink key={item.path} item={item} />
+            ))}
+          </div>
+        ))}
+      </nav>
     </aside>
   );
 }

@@ -1,7 +1,9 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import LoginPage from "@/pages/auth/LoginPage";
+import DashboardLayout from "@/layouts/DashboardLayout";
 import Dashboard from "@/pages/superadmin/Dashboard";
+import CreateAcademy from "@/pages/superadmin/CreateAcademy";
 import NotFound from "@/pages/NotFound";
 
 const AppRoutes = () => {
@@ -10,10 +12,11 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<LoginPage />} />
 
-        <Route
-          path="/superadmin/dashboard"
-          element={<Dashboard />}
-        />
+        <Route path="/superadmin" element={<DashboardLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="academies/create" element={<CreateAcademy />} />
+        </Route>
 
         <Route path="*" element={<NotFound />} />
       </Routes>
