@@ -1,16 +1,16 @@
 :root {
-  --bg-app: #012551;
-  --bg-nav: #011a39;
-  --bg-panel: #15365f;
-  --bg-card: #15365f;
-  --bg-input: #011f45;
-  --border-soft: rgba(255, 255, 255, 0.07);
-  --border-softer: rgba(255, 255, 255, 0.04);
-  --text-primary: #f8fafc;
-  --text-muted: #93a1b8;
-  --text-faint: #64748b;
+  --bg-app: #060f1f;
+  --bg-nav: #012551;
+  --bg-panel: #0b1830;
+  --bg-card: #0e1d38;
+  --bg-input: #0a1730;
+
+  --text-primary: #ffffff;
+  --text-muted: rgba(255,255,255,.75);
+  --text-faint: rgba(255,255,255,.55);
+
   --accent: #f5b423;
-  --accent-soft: rgba(245, 180, 35, 0.12);
+  --border-soft: rgba(255,255,255,.08);
 }
 
 * {
@@ -36,4 +36,57 @@
 .dashboard-content {
   padding: 24px 28px 40px;
   flex: 1;
+}
+body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--text-primary);
+}
+
+/* p,
+span,
+small {
+  color: var(--text-primary);
+} */
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+input,
+textarea,
+select {
+  color: var(--text-primary);
+  background: var(--bg-input);
+}
+
+::placeholder {
+  color: var(--text-faint);
+}
+
+.dashboard-layout {
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+.sidebar {
+  background: var(--bg-nav);
+}
+
+.dashboard-header {
+  background: var(--bg-panel);
+}
+
+.stat-card,
+.dashboard-card,
+.chart-card {
+  background: var(--bg-card);
 }
