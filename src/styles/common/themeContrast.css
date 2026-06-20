@@ -1,0 +1,52 @@
+/*
+ * Theme contrast layer.
+ * Keeps text and borders readable for any base color (including light shades
+ * like white) by deriving them from the runtime --text-primary, which already
+ * flips between light/dark based on the chosen base color.
+ *
+ * This file only ADDS overrides; it does not change existing styles.
+ * Selectors are scoped under :root / html:root purely to win specificity so
+ * the overrides apply regardless of stylesheet import order.
+ */
+
+/* Make every soft divider/border adapt to the active text color so they stay
+   visible on both dark and light base colors. */
+html:root {
+  --border-soft: color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+/* Hardcoded-white text → adapt to the contrast-aware text color. */
+:root .header-title h2,
+:root .header-search input,
+:root .header-user-info h4,
+:root .header-menu-btn:hover,
+:root .notification-btn:hover,
+:root .sidebar-brand-text h1,
+:root .stat-value-row h2,
+:root .dashboard-card h3,
+:root .panel-title,
+:root .form-input,
+:root .facility-chip.checked,
+:root .preset-chip.active,
+:root .theme-preview-card strong {
+  color: var(--text-primary);
+}
+
+/* Hardcoded white borders → adapt. */
+:root .stat-card:hover,
+:root .preset-chip:hover,
+:root .preset-dot,
+:root .uploader-dropzone {
+  border-color: color-mix(in srgb, var(--text-primary) 16%, transparent);
+}
+
+/* Hardcoded white hover backgrounds → adapt. */
+:root .header-menu-btn:hover,
+:root .sidebar-link:hover,
+:root .btn-ghost:hover {
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+:root .sidebar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
