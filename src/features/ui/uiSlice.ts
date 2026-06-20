@@ -1,5 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
+import { getStoredThemeColor, storeThemeColor } from "@/theme";
 
 export interface PageHeaderState {
   title: string;
@@ -9,6 +10,7 @@ export interface PageHeaderState {
 export interface UiState {
   pageHeader: PageHeaderState;
   sidebarCollapsed: boolean;
+  themeColor: string;
 }
 
 const initialState: UiState = {
@@ -17,6 +19,7 @@ const initialState: UiState = {
     breadcrumb: ["Dashboard"],
   },
   sidebarCollapsed: false,
+  themeColor: getStoredThemeColor(),
 };
 
 const uiSlice = createSlice({
@@ -29,8 +32,12 @@ const uiSlice = createSlice({
     toggleSidebar(state) {
       state.sidebarCollapsed = !state.sidebarCollapsed;
     },
+    setThemeColor(state, action: PayloadAction<string>) {
+      state.themeColor = action.payload;
+      storeThemeColor(action.payload);
+    },
   },
 });
 
-export const { setPageHeader, toggleSidebar } = uiSlice.actions;
+export const { setPageHeader, toggleSidebar, setThemeColor } = uiSlice.actions;
 export default uiSlice.reducer;
