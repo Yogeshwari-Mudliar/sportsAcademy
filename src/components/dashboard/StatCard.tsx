@@ -16,7 +16,7 @@ export default function StatCard({
   color = "blue",
 }: StatCardProps) {
   return (
-    <div className="stat-card">
+    <div className="stat-card shadow-2xl">
       <div className="stat-card-top">
         <p className="stat-title">{title}</p>
         <div className={`stat-icon ${color}`}>{icon}</div>

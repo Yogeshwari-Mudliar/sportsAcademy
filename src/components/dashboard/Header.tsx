@@ -1,6 +1,6 @@
 // src/components/dashboard/Header.tsx
 
-import { Bell, Search, Menu, ChevronDown } from "lucide-react";
+import { Bell, Search, Menu } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { toggleSidebar } from "../../features/ui/uiSlice";
 
@@ -20,12 +20,14 @@ function getStoredUser(): StoredUser {
 
 export default function Header() {
   const dispatch = useAppDispatch();
-  const { title, breadcrumb } = useAppSelector((state) => state.ui.pageHeader);
+  const { pageHeader, sidebarCollapsed } = useAppSelector((state) => state.ui);
+
+const { title, breadcrumb } = pageHeader;
   const user = getStoredUser();
 
   return (
-    <header className="dashboard-header">
-      <div className="header-left">
+    <header className="dashboard-header ">
+      <div className="header-left ">
         <button
           type="button"
           className="header-menu-btn"
@@ -50,8 +52,9 @@ export default function Header() {
 
       <div className="header-right">
         <div className="header-search">
+          <Search size={18} className="header-search-icon" />
           <input type="text" placeholder="Search anything..." />
-          <Search size={18} />
+          <kbd className="header-search-shortcut">⌘K</kbd>
         </div>
 
         <button className="notification-btn" aria-label="Notifications">
@@ -59,14 +62,16 @@ export default function Header() {
           <span className="notification-badge">8</span>
         </button>
 
-        <div className="header-user">
-          <img src="https://i.pravatar.cc/100?img=12" alt="User" />
-          <div className="header-user-info">
-            <h4>{user.name || "Super Admin"}</h4>
-            <span>{user.email || "superadmin@ca.com"}</span>
-          </div>
-          <ChevronDown size={16} className="header-user-caret" />
-        </div>
+      <div className="header-user">
+  <img src="https://i.pravatar.cc/100?img=12" alt="User" />
+
+  {sidebarCollapsed && (
+    <div className="header-user-info">
+      <h4>{user.name || "Superadmin User"}</h4>
+      <span>{user.email || "superadmin@sportsacademy.com"}</span>
+    </div>
+  )}
+</div>
       </div>
     </header>
   );

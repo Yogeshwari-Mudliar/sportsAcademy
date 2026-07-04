@@ -53,6 +53,17 @@ export const SUPER_ADMIN_SIDEBAR: SidebarGroup[] = [
       },
       { label: "Coaches", path: "/superadmin/coaches", icon: Users },
       { label: "Students", path: "/superadmin/students", icon: GraduationCap },
+      
+       {
+        label: "Manage Users",
+        path: "/superadmin/ManageUsers",
+        icon: Building2,
+        children: [
+          { label: "Change Categories", path: "/superadmin/ChangeCategories" },
+          
+        ],
+      },
+
       { label: "Payments", path: "/superadmin/payments", icon: CreditCard },
       { label: "Tournaments", path: "/superadmin/tournaments", icon: Trophy },
       { label: "Subscriptions", path: "/superadmin/subscriptions", icon: BadgeDollarSign },

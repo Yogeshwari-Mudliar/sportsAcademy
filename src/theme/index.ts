@@ -1,11 +1,11 @@
 // src/theme/index.ts
 
-export const DEFAULT_BASE_COLOR = "#012551";
+export const DEFAULT_BASE_COLOR = "#08152c";
 export const THEME_STORAGE_KEY = "themeBaseColor";
 
 export const THEME_PRESETS = [
-  { name: "Navy (Default)", color: "#012551" },
-  { name: "Midnight", color: "#0b1020" },
+  { name: "Navy (Default)", color: "#08152c" },
+  { name: "Midnight", color: "#060b16" },
   { name: "Forest", color: "#06281f" },
   { name: "Plum", color: "#2a0f3d" },
   { name: "Maroon", color: "#3a0d18" },
@@ -68,14 +68,7 @@ function mix(
   );
 }
 
-const BLACK: [number, number, number] = [0, 0, 0];
-const WHITE: [number, number, number] = [255, 255, 255];
 
-const darken = (hex: string, w: number) =>
-  mix(hex, BLACK, w);
-
-const lighten = (hex: string, w: number) =>
-  mix(hex, WHITE, w);
 
 export function isValidHexColor(
   value: string
@@ -107,11 +100,11 @@ export interface ThemePalette {
 
 export function buildPalette(base: string): ThemePalette {
   return {
-    app: darken(base, 0.2),
-    nav: base,
-    panel: lighten(base, 0.08),
-    card: lighten(base, 0.12),
-    input: darken(base, 0.15),
+    app: "#f4f6f8",      // Soft light gray background matching the image
+    nav: base,           // Dark theme base color acts as sidebar background
+    panel: "#ffffff",    // Clean white header
+    card: "#ffffff",     // Clean white cards
+    input: "#f1f5f9",    // Soft light gray input background
   };
 }
 export function applyThemeColor(base: string): void {
@@ -128,33 +121,17 @@ export function applyThemeColor(base: string): void {
   root.style.setProperty("--bg-panel", palette.panel);
   root.style.setProperty("--bg-card", palette.card);
   root.style.setProperty("--bg-input", palette.input);
+  root.style.setProperty("--accent", "#ff6b00");
+  root.style.setProperty("--accent-soft", "rgba(255, 107, 0, 0.08)");
 
-const textPrimary = getContrastTextColor(color);
+  // Always use light theme contrast colors for the main panel area
+  const textPrimary = "#0a1931"; // Dark navy text primary
+  const textMuted = "#475569";   // Slate-600 secondary text
+  const textFaint = "#94a3b8";   // Slate-400 tertiary text
 
-const textMuted =
-  textPrimary === "#ffffff"
-    ? "rgba(255,255,255,.75)"
-    : "rgba(17,24,39,.75)";
-
-const textFaint =
-  textPrimary === "#ffffff"
-    ? "rgba(255,255,255,.55)"
-    : "rgba(17,24,39,.55)";
-
-root.style.setProperty(
-  "--text-primary",
-  textPrimary
-);
-
-root.style.setProperty(
-  "--text-muted",
-  textMuted
-);
-
-root.style.setProperty(
-  "--text-faint",
-  textFaint
-);
+  root.style.setProperty("--text-primary", textPrimary);
+  root.style.setProperty("--text-muted", textMuted);
+  root.style.setProperty("--text-faint", textFaint);
 }
 export function getStoredThemeColor(): string {
   try {
@@ -182,14 +159,4 @@ export function storeThemeColor(
       base
     );
   } catch {}
-}
-function getContrastTextColor(hex: string): string {
-  const [r, g, b] = hexToRgb(hex);
-
-  const brightness =
-    (r * 299 + g * 587 + b * 114) / 1000;
-
-  return brightness > 150
-    ? "#111827"
-    : "#ffffff";
-}
+}

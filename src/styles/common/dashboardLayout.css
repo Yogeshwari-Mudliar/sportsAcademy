@@ -1,16 +1,16 @@
 :root {
-  --bg-app: #060f1f;
-  --bg-nav: #012551;
-  --bg-panel: #0b1830;
-  --bg-card: #0e1d38;
-  --bg-input: #0a1730;
+  --bg-app: #f4f6f8;
+  --bg-nav: #08152c;
+  --bg-panel: #ffffff;
+  --bg-card: #ffffff;
+  --bg-input: #f1f5f9;
 
-  --text-primary: #ffffff;
-  --text-muted: rgba(255,255,255,.75);
-  --text-faint: rgba(255,255,255,.55);
+  --text-primary: #0a1931;
+  --text-muted: #475569;
+  --text-faint: #94a3b8;
 
-  --accent: #f5b423;
-  --border-soft: rgba(255,255,255,.08);
+  --accent: #ff6b00;
+  --border-soft: #e2e8f0;
 }
 
 * {
