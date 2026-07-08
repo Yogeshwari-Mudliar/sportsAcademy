@@ -11,6 +11,10 @@ import Admin from "@/pages/superadmin/Admin";
 import Coach from "@/pages/superadmin/Coach";
 import Student from "@/pages/superadmin/Student";
 import ManageUsers from "@/pages/superadmin/ManageUsers";
+import AcademyListPage from "@/pages/superadmin/AcademyList";
+import EditAcademy from "@/pages/superadmin/EditAcademy";
+import ChangeEmail from "@/pages/superadmin/ChangeEmail";
+import ChangePassword from "@/pages/superadmin/ChangePassword";
 
 const AppRoutes = () => {
   return (
@@ -22,8 +26,12 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="ManageUsers" element={<ManageUsers />} />
+          <Route path="academies" element={<AcademyListPage />} />
           <Route path="academies/create" element={<CreateAcademy />} />
+          <Route path="academies/:id/edit" element={<EditAcademy />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="change-email" element={<ChangeEmail />} />
+          <Route path="change-password" element={<ChangePassword />} />
           <Route path="ChangeCategories" element={<ChangeCategories />}>
             <Route index element={<Navigate to="admin" replace />} />
             <Route path="admin" element={<Admin />} />

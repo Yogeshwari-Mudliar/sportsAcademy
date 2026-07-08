@@ -1,11 +1,15 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../app/hooks";
 import { setPageHeader } from "../../features/ui/uiSlice";
 import StatsOverview from "../../components/dashboard/StatsOverview";
 import AcademyForm from "../../components/forms/AcademyForm";
+import { createAcademy } from "../../data/academies";
+import type { AcademyFormData } from "../../types/academy";
 
 export default function CreateAcademy() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     dispatch(
@@ -16,10 +20,19 @@ export default function CreateAcademy() {
     );
   }, [dispatch]);
 
+  const handleSubmit = (data: AcademyFormData) => {
+    createAcademy(data);
+    navigate("/superadmin/academies");
+  };
+
   return (
     <div className="dashboard-page">
       <StatsOverview />
-      <AcademyForm />
+      <AcademyForm
+        mode="create"
+        onSubmit={handleSubmit}
+        onCancel={() => navigate("/superadmin/academies")}
+      />
     </div>
   );
 }

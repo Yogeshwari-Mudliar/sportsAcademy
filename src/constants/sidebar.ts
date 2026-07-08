@@ -14,6 +14,8 @@ import {
   FileText,
   MessageSquareQuote,
   Bell,
+  Mail,
+  Lock,
   ShieldCheck,
   KeyRound,
   Settings,
@@ -57,10 +59,11 @@ export const SUPER_ADMIN_SIDEBAR: SidebarGroup[] = [
        {
         label: "Manage Users",
         path: "/superadmin/ManageUsers",
-        icon: Building2,
+        icon: Building2,Lock,Mail,
         children: [
           { label: "Change Categories", path: "/superadmin/ChangeCategories" },
-          
+          { label: "Change Email", path: "/superadmin/change-email", icon: Mail },
+          { label: "Change Password", path: "/superadmin/change-password", icon: Lock },
         ],
       },
 
@@ -84,6 +87,7 @@ export const SUPER_ADMIN_SIDEBAR: SidebarGroup[] = [
     items: [
       { label: "Admins", path: "/superadmin/admins", icon: ShieldCheck },
       { label: "Roles & Permissions", path: "/superadmin/roles", icon: KeyRound },
+      
       { label: "Settings", path: "/superadmin/settings", icon: Settings },
       { label: "Activity Log", path: "/superadmin/activity", icon: Activity },
     ],

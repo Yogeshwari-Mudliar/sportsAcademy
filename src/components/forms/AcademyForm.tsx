@@ -1,41 +1,68 @@
-import { useState } from "react";
-import { ChevronDown, CalendarDays, Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, CalendarDays, Plus, Save } from "lucide-react";
+import { Country, State, City } from "country-state-city";
 import FacilitySelector from "./FacilitySelector";
 import ImageUploader from "./ImageUploader";
 import {
   ACADEMY_TYPES,
-  INDIAN_STATES,
+  EMPTY_ACADEMY_FORM,
   type AcademyFormData,
 } from "../../types/academy";
 import "../../styles/superadmin/createAcademy.css";
 
-const EMPTY_FORM: AcademyFormData = {
-  name: "",
-  ownerName: "",
-  email: "",
-  phone: "",
-  addressLine1: "",
-  addressLine2: "",
-  city: "",
-  state: "",
-  pincode: "",
-  about: "",
-  establishedYear: "",
-  academyType: "",
-  facilities: [],
-  website: "",
-  instagram: "",
-  facebook: "",
-  youtube: "",
-};
+interface AcademyFormProps {
+  mode?: "create" | "edit";
+  initialData?: AcademyFormData;
+  onSubmit?: (data: AcademyFormData) => void;
+  onCancel?: () => void;
+}
 
-export default function AcademyForm() {
-  const [form, setForm] = useState<AcademyFormData>(EMPTY_FORM);
+export default function AcademyForm({
+  mode = "create",
+  initialData,
+  onSubmit,
+  onCancel,
+}: AcademyFormProps) {
+  const [form, setForm] = useState<AcademyFormData>(
+    initialData ?? EMPTY_ACADEMY_FORM
+  );
+
+  useEffect(() => {
+    if (initialData) setForm(initialData);
+  }, [initialData]);
+
+  const countries = useMemo(() => Country.getAllCountries(), []);
+
+  const states = useMemo(
+    () => (form.country ? State.getStatesOfCountry(form.country) : []),
+    [form.country]
+  );
+
+  const cities = useMemo(
+    () =>
+      form.country && form.state
+        ? City.getCitiesOfState(form.country, form.state)
+        : [],
+    [form.country, form.state]
+  );
 
   const update = <K extends keyof AcademyFormData>(
     key: K,
     value: AcademyFormData[K]
   ) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleCountryChange = (countryCode: string) => {
+    setForm((prev) => ({
+      ...prev,
+      country: countryCode,
+      state: "",
+      city: "",
+    }));
+  };
+
+  const handleStateChange = (stateCode: string) => {
+    setForm((prev) => ({ ...prev, state: stateCode, city: "" }));
+  };
 
   const toggleFacility = (facility: string) =>
     setForm((prev) => ({
@@ -47,13 +74,20 @@ export default function AcademyForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Create Academy", form);
+    onSubmit?.(form);
+  };
+
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+      return;
+    }
+    setForm(initialData ?? EMPTY_ACADEMY_FORM);
   };
 
   return (
     <form className="academy-form" onSubmit={handleSubmit}>
       <div className="academy-grid">
-        {/* Left: Academy Information */}
         <section className="panel">
           <h2 className="panel-title">Academy Information</h2>
 
@@ -67,6 +101,7 @@ export default function AcademyForm() {
                 placeholder="Enter academy name"
                 value={form.name}
                 onChange={(e) => update("name", e.target.value)}
+                required
               />
             </div>
 
@@ -79,6 +114,7 @@ export default function AcademyForm() {
                 placeholder="Enter owner full name"
                 value={form.ownerName}
                 onChange={(e) => update("ownerName", e.target.value)}
+                required
               />
             </div>
           </div>
@@ -94,6 +130,7 @@ export default function AcademyForm() {
                 placeholder="Enter email address"
                 value={form.email}
                 onChange={(e) => update("email", e.target.value)}
+                required
               />
             </div>
 
@@ -110,6 +147,7 @@ export default function AcademyForm() {
                   placeholder="Enter phone number"
                   value={form.phone}
                   onChange={(e) => update("phone", e.target.value)}
+                  required
                 />
               </div>
             </div>
@@ -125,6 +163,7 @@ export default function AcademyForm() {
                 placeholder="House no, Building, Street"
                 value={form.addressLine1}
                 onChange={(e) => update("addressLine1", e.target.value)}
+                required
               />
             </div>
 
@@ -142,30 +181,19 @@ export default function AcademyForm() {
           <div className="form-row three">
             <div className="form-field">
               <label className="form-label">
-                City<span className="required">*</span>
-              </label>
-              <input
-                className="form-input"
-                placeholder="Enter city"
-                value={form.city}
-                onChange={(e) => update("city", e.target.value)}
-              />
-            </div>
-
-            <div className="form-field">
-              <label className="form-label">
-                State<span className="required">*</span>
+                Country<span className="required">*</span>
               </label>
               <div className="select-wrap">
                 <select
                   className="form-input"
-                  value={form.state}
-                  onChange={(e) => update("state", e.target.value)}
+                  value={form.country}
+                  onChange={(e) => handleCountryChange(e.target.value)}
+                  required
                 >
-                  <option value="">Select state</option>
-                  {INDIAN_STATES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
+                  <option value="">Select country</option>
+                  {countries.map((c) => (
+                    <option key={c.isoCode} value={c.isoCode}>
+                      {c.name}
                     </option>
                   ))}
                 </select>
@@ -175,6 +203,78 @@ export default function AcademyForm() {
 
             <div className="form-field">
               <label className="form-label">
+                State<span className="required">*</span>
+              </label>
+              {form.country && states.length === 0 ? (
+                <input
+                  className="form-input"
+                  placeholder="Enter state / region"
+                  value={form.state}
+                  onChange={(e) => handleStateChange(e.target.value)}
+                  required
+                />
+              ) : (
+                <div className="select-wrap">
+                  <select
+                    className="form-input"
+                    value={form.state}
+                    onChange={(e) => handleStateChange(e.target.value)}
+                    disabled={!form.country}
+                    required
+                  >
+                    <option value="">
+                      {form.country ? "Select state" : "Select country first"}
+                    </option>
+                    {states.map((s) => (
+                      <option key={s.isoCode} value={s.isoCode}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="select-caret" />
+                </div>
+              )}
+            </div>
+
+            <div className="form-field">
+              <label className="form-label">
+                City<span className="required">*</span>
+              </label>
+              {form.state && cities.length === 0 ? (
+                <input
+                  className="form-input"
+                  placeholder="Enter city name"
+                  value={form.city}
+                  onChange={(e) => update("city", e.target.value)}
+                  required
+                />
+              ) : (
+                <div className="select-wrap">
+                  <select
+                    className="form-input"
+                    value={form.city}
+                    onChange={(e) => update("city", e.target.value)}
+                    disabled={!form.state}
+                    required
+                  >
+                    <option value="">
+                      {form.state ? "Select city" : "Select state first"}
+                    </option>
+                    {cities.map((c) => (
+                      <option key={`${c.name}-${c.latitude}`} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="select-caret" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-field">
+              <label className="form-label">
                 Pincode<span className="required">*</span>
               </label>
               <input
@@ -182,6 +282,7 @@ export default function AcademyForm() {
                 placeholder="Enter pincode"
                 value={form.pincode}
                 onChange={(e) => update("pincode", e.target.value)}
+                required
               />
             </div>
           </div>
@@ -223,6 +324,7 @@ export default function AcademyForm() {
                   className="form-input"
                   value={form.academyType}
                   onChange={(e) => update("academyType", e.target.value)}
+                  required
                 >
                   <option value="">Select academy type</option>
                   {ACADEMY_TYPES.map((t) => (
@@ -245,17 +347,12 @@ export default function AcademyForm() {
           </div>
         </section>
 
-        {/* Right column */}
         <div className="right-column">
           <section className="panel">
             <h2 className="panel-title">Academy Images</h2>
 
             <div className="image-row">
-              <ImageUploader
-                title="Logo"
-                required
-                hint="PNG, JPG up to 2MB"
-              />
+              <ImageUploader title="Logo" required hint="PNG, JPG up to 2MB" />
               <ImageUploader
                 title="Cover Image"
                 required
@@ -324,15 +421,19 @@ export default function AcademyForm() {
       </div>
 
       <div className="form-actions">
-        <button
-          type="button"
-          className="btn btn-ghost"
-          onClick={() => setForm(EMPTY_FORM)}
-        >
+        <button type="button" className="btn btn-ghost" onClick={handleCancel}>
           Cancel
         </button>
         <button type="submit" className="btn btn-primary">
-          <Plus size={18} /> Create Academy
+          {mode === "edit" ? (
+            <>
+              <Save size={18} /> Save Changes
+            </>
+          ) : (
+            <>
+              <Plus size={18} /> Create Academy
+            </>
+          )}
         </button>
       </div>
     </form>

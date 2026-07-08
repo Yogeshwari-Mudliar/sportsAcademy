@@ -101,6 +101,11 @@ select.form-input {
   cursor: pointer;
 }
 
+select.form-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .select-wrap {
   position: relative;
 }

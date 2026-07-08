@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import bgImage from "../../assets/sports-bg 2.png";
-import { mockUsers } from "../../data/mockUsers";
+import { authenticateUser } from "../../data/account";
 import { useNavigate } from "react-router-dom";
 import { ROLES } from "../../constants/roles";
 
@@ -78,11 +78,7 @@ const navigate = useNavigate();
     setErrors((prev) => ({ ...prev, username: usernameError, password: passwordError }));
     if (usernameError || passwordError) return;
 
-    const user = mockUsers.find(
-      (u) =>
-        (u.email.toLowerCase() === username.toLowerCase() || u.mobile === username) &&
-        u.password === password
-    );
+    const user = authenticateUser(username, password);
 
     if (!user) {
       setErrors((prev) => ({ ...prev, password: "Invalid email/mobile number or password" }));
