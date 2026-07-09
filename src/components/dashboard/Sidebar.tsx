@@ -1,11 +1,14 @@
 // src/components/dashboard/Sidebar.tsx
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { ChevronDown, Headphones, ChevronRight } from "lucide-react";
-import { SUPER_ADMIN_SIDEBAR } from "../../constants/sidebar";
+import { ADMIN_SIDEBAR, COACH_SIDEBAR, STUDENT_SIDEBAR, SUPER_ADMIN_SIDEBAR } from "../../constants/sidebar";
 import type { SidebarItem } from "../../constants/sidebar";
 import { useAppSelector } from "../../app/hooks";
+import { getCurrentUser } from "../../data/account";
+import { ROLE_LABELS, ROLES } from "../../constants/roles";
+import { PERMISSIONS_UPDATED_EVENT, hasPermission } from "../../data/permissions";
 import "../../styles/common/sidebar.css";
 
 function SidebarLink({ item }: { item: SidebarItem }) {
@@ -70,6 +73,41 @@ function SidebarLink({ item }: { item: SidebarItem }) {
 
 export default function Sidebar() {
   const collapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
+  const [permissionsVersion, setPermissionsVersion] = useState(0);
+  const user = getCurrentUser();
+  const role = user?.role ?? ROLES.student;
+  const baseSidebarGroups =
+    role === ROLES.superadmin
+      ? SUPER_ADMIN_SIDEBAR
+      : role === ROLES.admin
+      ? ADMIN_SIDEBAR
+      : role === ROLES.coach
+      ? COACH_SIDEBAR
+      : STUDENT_SIDEBAR;
+  const sidebarGroups = useMemo(
+    () =>
+      baseSidebarGroups
+        .map((group) => ({
+          ...group,
+          items: group.items
+            .filter((item) => !item.permission || hasPermission(role, item.permission))
+            .map((item) => ({
+              ...item,
+              children: item.children?.filter(
+                (child) => !child.permission || hasPermission(role, child.permission)
+              ),
+            }))
+            .filter((item) => !item.children || item.children.length > 0),
+        }))
+        .filter((group) => group.items.length > 0),
+    [baseSidebarGroups, permissionsVersion, role]
+  );
+
+  useEffect(() => {
+    const refresh = () => setPermissionsVersion((value) => value + 1);
+    window.addEventListener(PERMISSIONS_UPDATED_EVENT, refresh);
+    return () => window.removeEventListener(PERMISSIONS_UPDATED_EVENT, refresh);
+  }, []);
 
   return (
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
@@ -95,12 +133,12 @@ export default function Sidebar() {
           <h1>
             CRICKET <span>ACADEMY</span>
           </h1>
-          <p>SUPER ADMIN</p>
+          <p>{ROLE_LABELS[role]}</p>
         </div>
       </div>
 
       <nav className="sidebar-nav">
-        {SUPER_ADMIN_SIDEBAR.map((group) => (
+        {sidebarGroups.map((group) => (
           <div key={group.title} className="sidebar-section">
             <p className="sidebar-section-title">{group.title}</p>
             {group.items.map((item) => (

@@ -109,6 +109,30 @@ export default function Dashboard() {
   return (
     <div className="dashboard-page space-y-6">
       {/* Top 6 Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {BOTTOM_WIDGETS.map((widget) => (
+          <div key={widget.title} className="bg-white rounded-2xl border border-[var(--border-soft)] p-4 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                widget.color === "orange" ? "bg-orange-50 text-orange-600" :
+                widget.color === "blue" ? "bg-blue-50 text-blue-600" :
+                widget.color === "purple" ? "bg-purple-50 text-purple-600" :
+                "bg-green-50 text-green-600"
+              }`}>
+                {widget.icon}
+              </div>
+              <div>
+                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">{widget.title}</span>
+                <span className="text-lg font-bold text-[var(--text-primary)] mt-0.5 block">{widget.value}</span>
+              </div>
+            </div>
+            <span className="text-xs font-semibold text-green-500">
+              ↑ {widget.change}
+            </span>
+          </div>
+        ))}
+      </div>
+      
       <StatsOverview />
 
       {/* Middle Panels: Recent Academies & Revenue Analytics */}
@@ -279,29 +303,7 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom Row of 4 Smaller Horizontal Widgets */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {BOTTOM_WIDGETS.map((widget) => (
-          <div key={widget.title} className="bg-white rounded-2xl border border-[var(--border-soft)] p-4 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                widget.color === "orange" ? "bg-orange-50 text-orange-600" :
-                widget.color === "blue" ? "bg-blue-50 text-blue-600" :
-                widget.color === "purple" ? "bg-purple-50 text-purple-600" :
-                "bg-green-50 text-green-600"
-              }`}>
-                {widget.icon}
-              </div>
-              <div>
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">{widget.title}</span>
-                <span className="text-lg font-bold text-[var(--text-primary)] mt-0.5 block">{widget.value}</span>
-              </div>
-            </div>
-            <span className="text-xs font-semibold text-green-500">
-              ↑ {widget.change}
-            </span>
-          </div>
-        ))}
-      </div>
+      
     </div>
   );
 }

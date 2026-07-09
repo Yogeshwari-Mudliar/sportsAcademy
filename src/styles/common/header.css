@@ -140,11 +140,23 @@
   place-items: center;
 }
 
+.header-user-wrap {
+  position: relative;
+}
+
 .header-user {
   display: flex;
   align-items: center;
   gap: 10px;
   cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.header-user:hover {
+  background: var(--bg-input);
 }
 
 .header-user img {
@@ -166,6 +178,72 @@
 .header-user-info span {
   color: var(--text-faint);
   font-size: 12px;
+}
+
+.header-user-caret {
+  color: var(--text-faint);
+  transition: transform 0.15s;
+}
+
+.header-user-caret.open {
+  transform: rotate(180deg);
+}
+
+.header-user-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 280px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+  padding: 10px;
+  z-index: 50;
+}
+
+.header-user-menu-title {
+  padding: 6px 8px 10px;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.header-role-option {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+}
+
+.header-role-option:hover,
+.header-role-option.active {
+  background: rgba(255, 107, 0, 0.08);
+}
+
+.header-role-option strong,
+.header-role-option small {
+  display: block;
+}
+
+.header-role-option strong {
+  font-size: 13px;
+}
+
+.header-role-option small {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 2px;
 }
 
 @media (max-width: 1024px) {

@@ -1,22 +1,28 @@
-import { useCallback, useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ROLE_LABELS, type Role } from "@/constants/roles";
 import type { AccountUser } from "@/data/account";
-import { ACCOUNT_UPDATED_EVENT, getSuperAdmins } from "@/data/account";
+import { ACCOUNT_UPDATED_EVENT, getManageableAccountUsers } from "@/data/account";
 
 interface SuperAdminTableProps {
   mode: "single" | "multiple";
   selectedIds: number[];
   onSelectionChange: (ids: number[]) => void;
+  roleFilter?: Role;
 }
 
 export default function SuperAdminTable({
   mode,
   selectedIds,
   onSelectionChange,
+  roleFilter,
 }: SuperAdminTableProps) {
-  const [admins, setAdmins] = useState<AccountUser[]>(() => getSuperAdmins());
+  const [admins, setAdmins] = useState<AccountUser[]>(() => getManageableAccountUsers());
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
 
   const refresh = useCallback(() => {
-    setAdmins(getSuperAdmins());
+    setAdmins(getManageableAccountUsers());
   }, []);
 
   useEffect(() => {
@@ -24,15 +30,36 @@ export default function SuperAdminTable({
     return () => window.removeEventListener(ACCOUNT_UPDATED_EVENT, refresh);
   }, [refresh]);
 
+  const filteredAdmins = useMemo(
+    () => admins.filter((admin) => !roleFilter || admin.role === roleFilter),
+    [admins, roleFilter]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredAdmins.length / pageSize));
+  const paginatedAdmins = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAdmins.slice(start, start + pageSize);
+  }, [filteredAdmins, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [roleFilter]);
+
   const allSelected =
-    admins.length > 0 && admins.every((a) => selectedIds.includes(a.id));
+    filteredAdmins.length > 0 && filteredAdmins.every((a) => selectedIds.includes(a.id));
 
   const handleSelectAll = (checked: boolean) => {
     if (!checked) {
       onSelectionChange([]);
       return;
     }
-    onSelectionChange(admins.map((a) => a.id));
+    onSelectionChange(filteredAdmins.map((a) => a.id));
   };
 
   const handleToggle = (id: number) => {
@@ -48,64 +75,104 @@ export default function SuperAdminTable({
     }
   };
 
-  if (admins.length === 0) {
+  if (filteredAdmins.length === 0) {
     return (
       <div className="account-empty-table">
-        No super admin accounts found.
+        No manageable accounts found.
       </div>
     );
   }
 
   return (
-    <div className="account-table-wrap">
-      <table className="account-table">
-        <thead>
-          <tr>
-            <th className="account-table-check">
-              {mode === "multiple" ? (
-                <input
-                  type="checkbox"
-                  checked={allSelected}
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                  aria-label="Select all super admins"
-                />
-              ) : (
-                "Select"
-              )}
-            </th>
-            <th>#</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Mobile</th>
-          </tr>
-        </thead>
-        <tbody>
-          {admins.map((admin, index) => {
-            const selected = selectedIds.includes(admin.id);
-            return (
-              <tr
-                key={admin.id}
-                className={selected ? "selected" : ""}
-                onClick={() => handleToggle(admin.id)}
-              >
-                <td className="account-table-check" onClick={(e) => e.stopPropagation()}>
+    <div>
+      <div className="account-table-wrap">
+        <table className="account-table">
+          <thead>
+            <tr>
+              <th className="account-table-check">
+                {mode === "multiple" ? (
                   <input
-                    type={mode === "single" ? "radio" : "checkbox"}
-                    name={mode === "single" ? "superadmin-select" : undefined}
-                    checked={selected}
-                    onChange={() => handleToggle(admin.id)}
-                    aria-label={`Select ${admin.name}`}
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    aria-label="Select all users"
                   />
-                </td>
-                <td>{index + 1}</td>
-                <td className="account-table-name">{admin.name}</td>
-                <td>{admin.email}</td>
-                <td>{admin.mobile}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                ) : (
+                  "Select"
+                )}
+              </th>
+              <th>#</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Email</th>
+              <th>Mobile</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedAdmins.map((admin, index) => {
+              const selected = selectedIds.includes(admin.id);
+              return (
+                <tr
+                  key={admin.id}
+                  className={selected ? "selected" : ""}
+                  onClick={() => handleToggle(admin.id)}
+                >
+                  <td className="account-table-check" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type={mode === "single" ? "radio" : "checkbox"}
+                      name={mode === "single" ? "superadmin-select" : undefined}
+                      checked={selected}
+                      onChange={() => handleToggle(admin.id)}
+                      aria-label={`Select ${admin.name}`}
+                    />
+                  </td>
+                  <td>{(currentPage - 1) * pageSize + index + 1}</td>
+                  <td className="account-table-name">{admin.name}</td>
+                  <td>{ROLE_LABELS[admin.role]}</td>
+                  <td>{admin.email}</td>
+                  <td>{admin.mobile}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="account-pagination">
+        <span className="account-pagination-info">
+          Page {currentPage} of {totalPages}
+        </span>
+        <div className="account-pagination-actions">
+          <button
+            type="button"
+            className="account-page-btn"
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            disabled={currentPage === 1}
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+            <button
+              key={page}
+              type="button"
+              className={`account-page-number ${page === currentPage ? "active" : ""}`}
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="account-page-btn"
+            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+            disabled={currentPage === totalPages}
+            aria-label="Next page"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

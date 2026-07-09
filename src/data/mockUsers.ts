@@ -43,7 +43,7 @@ export const mockUsers = [
     id: 3,
     name: "Coach User",
     email: "coach@sportsacademy.com",
-    mobile: "9123456789",
+    mobile: "9876543212",
     password: "Coach@123",
     role: "coach",
   },

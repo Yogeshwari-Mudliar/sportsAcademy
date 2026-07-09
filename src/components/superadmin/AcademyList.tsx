@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Search,
-  Filter,
   RotateCcw,
   Edit3,
   Eye,

@@ -2,16 +2,28 @@ import { useEffect, useMemo, useState } from "react";
 import { Save } from "lucide-react";
 import { useAppDispatch } from "../../app/hooks";
 import { setPageHeader } from "../../features/ui/uiSlice";
+import { ROLES, type Role } from "../../constants/roles";
+import AccountRoleTabs from "../../components/superadmin/AccountRoleTabs";
 import SuperAdminTable from "../../components/superadmin/SuperAdminTable";
 import {
-  getSuperAdmins,
+  getManageableAccountUsers,
   updateAdminEmail,
   validateEmail,
 } from "../../data/account";
 import "../../styles/superadmin/account.css";
 
+const ROLE_ORDER: Role[] = [ROLES.superadmin, ROLES.admin, ROLES.coach, ROLES.student];
+
+function getAvailableRoles() {
+  const users = getManageableAccountUsers();
+  const roles = ROLE_ORDER.filter((role) => users.some((user) => user.role === role));
+  return roles.length ? roles : [ROLES.student];
+}
+
 export default function ChangeEmail() {
   const dispatch = useAppDispatch();
+  const [availableRoles] = useState<Role[]>(getAvailableRoles);
+  const [activeRole, setActiveRole] = useState<Role>(() => getAvailableRoles()[0]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
@@ -26,8 +38,12 @@ export default function ChangeEmail() {
 
   const selectedAdmin = useMemo(() => {
     if (selectedIds.length !== 1) return null;
-    return getSuperAdmins().find((a) => a.id === selectedIds[0]) ?? null;
-  }, [selectedIds]);
+    return (
+      getManageableAccountUsers().find(
+        (a) => a.id === selectedIds[0] && a.role === activeRole
+      ) ?? null
+    );
+  }, [activeRole, selectedIds]);
 
   useEffect(() => {
     dispatch(
@@ -43,7 +59,7 @@ export default function ChangeEmail() {
     setSuccess("");
 
     const selectionError =
-      selectedIds.length !== 1 ? "Select one super admin from the table." : "";
+      selectedIds.length !== 1 ? "Select one user from the table." : "";
     const newEmailError = validateEmail(newEmail);
     let confirmEmailError = "";
     if (!confirmEmail.trim()) {
@@ -80,15 +96,26 @@ export default function ChangeEmail() {
     <div className="dashboard-page account-page-wide">
       <div className="account-layout">
         <section className="account-panel">
-          <h2 className="account-panel-title">Super Admin List</h2>
+          <h2 className="account-panel-title">User List</h2>
           <p className="account-help">
-            Select one super admin from the table to change their email address.
+            Select one permitted user from the table to change their email address.
           </p>
+          <AccountRoleTabs
+            roles={availableRoles}
+            activeRole={activeRole}
+            onRoleChange={(role) => {
+              setActiveRole(role);
+              setSelectedIds([]);
+              setSuccess("");
+              setErrors((prev) => ({ ...prev, selection: "", form: "" }));
+            }}
+          />
 
           <SuperAdminTable
             mode="single"
             selectedIds={selectedIds}
             onSelectionChange={setSelectedIds}
+            roleFilter={activeRole}
           />
           {errors.selection && (
             <p className="account-error account-error-block">{errors.selection}</p>
@@ -100,13 +127,13 @@ export default function ChangeEmail() {
 
           {selectedAdmin ? (
             <div className="account-current">
-              <span className="account-current-label">Selected admin</span>
+              <span className="account-current-label">Selected user</span>
               <span className="account-current-value">{selectedAdmin.name}</span>
               <span className="account-current-label">Current email</span>
               <span className="account-current-value">{selectedAdmin.email}</span>
             </div>
           ) : (
-            <p className="account-help">Select a super admin from the table to continue.</p>
+            <p className="account-help">Select a user from the table to continue.</p>
           )}
 
           <form onSubmit={handleSubmit}>

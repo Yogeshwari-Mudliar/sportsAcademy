@@ -82,6 +82,60 @@
   border-radius: 12px;
 }
 
+.account-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.account-pagination-info {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.account-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.account-page-btn,
+.account-page-number {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.account-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.account-page-number.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .account-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .account-error-block {
   margin-top: 12px;
 }
@@ -130,6 +184,62 @@
   font-size: 13px;
   line-height: 1.6;
   color: var(--text-muted);
+}
+
+.account-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding-top: 2px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.account-tab {
+  position: relative;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.account-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-input);
+}
+
+.account-tab.active {
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border-color: var(--border-soft);
+}
+
+.account-tab.active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 10px 10px 0 0;
+  background: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .account-tabs {
+    overflow-x: auto;
+    align-items: stretch;
+  }
+
+  .account-tab {
+    flex: 0 0 auto;
+  }
 }
 
 .account-current {

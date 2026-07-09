@@ -4,6 +4,7 @@ import { useAppDispatch } from "../../app/hooks";
 import { setPageHeader } from "../../features/ui/uiSlice";
 
 const tabs = [
+  { title: "Super Admin", path: "superadmin" },
   { title: "Admin", path: "admin" },
   { title: "Coach", path: "coach" },
   { title: "Student", path: "student" },
@@ -28,7 +29,8 @@ export default function ChangeCategories() {
       {/* Tabs Header */}
       <div className="flex items-end px-6 pt-6 bg-[var(--bg-panel)]/40 border-b border-[var(--border-soft)]">
         {tabs.map((tab) => {
-          const active = location.pathname.endsWith(tab.path);
+        const currentTab = location.pathname.split("/").pop();
+const active = currentTab === tab.path;
 
           return (
             <button

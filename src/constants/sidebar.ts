@@ -14,23 +14,24 @@ import {
   FileText,
   MessageSquareQuote,
   Bell,
-  Mail,
-  Lock,
   ShieldCheck,
   KeyRound,
   Settings,
   Activity,
 } from "lucide-react";
+import type { PermissionKey } from "../data/permissions";
 
 export interface SidebarChild {
   label: string;
   path: string;
+  permission?: PermissionKey;
 }
 
 export interface SidebarItem {
   label: string;
   path: string;
   icon: LucideIcon;
+  permission?: PermissionKey;
   children?: SidebarChild[];
 }
 
@@ -43,27 +44,29 @@ export const SUPER_ADMIN_SIDEBAR: SidebarGroup[] = [
   {
     title: "Main",
     items: [
-      { label: "Dashboard", path: "/superadmin/dashboard", icon: LayoutDashboard },
+      { label: "Dashboard", path: "/superadmin/dashboard", icon: LayoutDashboard, permission: "dashboard" },
       {
         label: "Academies",
         path: "/superadmin/academies",
         icon: Building2,
+        permission: "academies",
         children: [
-          { label: "Academy List", path: "/superadmin/academies" },
-          { label: "Create Academy", path: "/superadmin/academies/create" },
+          { label: "Academy List", path: "/superadmin/academies", permission: "academies" },
+          { label: "Create Academy", path: "/superadmin/academies/create", permission: "createAcademy" },
         ],
       },
-      { label: "Coaches", path: "/superadmin/coaches", icon: Users },
-      { label: "Students", path: "/superadmin/students", icon: GraduationCap },
+      { label: "Coaches", path: "/superadmin/coaches", icon: Users, permission: "coaches" },
+      { label: "Students", path: "/superadmin/students", icon: GraduationCap, permission: "students" },
       
        {
         label: "Manage Users",
         path: "/superadmin/ManageUsers",
-        icon: Building2,Lock,Mail,
+        icon: Building2,
+        permission: "manageUsers",
         children: [
-          { label: "Change Categories", path: "/superadmin/ChangeCategories" },
-          { label: "Change Email", path: "/superadmin/change-email", icon: Mail },
-          { label: "Change Password", path: "/superadmin/change-password", icon: Lock },
+          { label: "Change Categories", path: "/superadmin/ChangeCategories", permission: "changeCategories" },
+          { label: "Change Email", path: "/superadmin/change-email", permission: "changeEmail" },
+          { label: "Change Password", path: "/superadmin/change-password", permission: "changePassword" },
         ],
       },
 
@@ -85,11 +88,47 @@ export const SUPER_ADMIN_SIDEBAR: SidebarGroup[] = [
   {
     title: "System",
     items: [
-      { label: "Admins", path: "/superadmin/admins", icon: ShieldCheck },
-      { label: "Roles & Permissions", path: "/superadmin/roles", icon: KeyRound },
+      { label: "Admins", path: "/superadmin/admins", icon: ShieldCheck, permission: "manageUsers" },
+      { label: "Roles & Permissions", path: "/superadmin/roles", icon: KeyRound, permission: "rolesPermissions" },
       
-      { label: "Settings", path: "/superadmin/settings", icon: Settings },
+      { label: "Settings", path: "/superadmin/settings", icon: Settings, permission: "settings" },
       { label: "Activity Log", path: "/superadmin/activity", icon: Activity },
+    ],
+  },
+];
+
+export const ADMIN_SIDEBAR: SidebarGroup[] = [
+  {
+    title: "Main",
+    items: [
+      { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard, permission: "dashboard" },
+      { label: "Students", path: "/admin/students", icon: GraduationCap, permission: "students" },
+      { label: "Coaches", path: "/admin/coaches", icon: Users, permission: "coaches" },
+      { label: "Settings", path: "/admin/settings", icon: Settings, permission: "settings" },
+      { label: "Change Email", path: "/admin/change-email", icon: ShieldCheck },
+      { label: "Change Password", path: "/admin/change-password", icon: KeyRound },
+    ],
+  },
+];
+
+export const COACH_SIDEBAR: SidebarGroup[] = [
+  {
+    title: "Main",
+    items: [
+      { label: "Dashboard", path: "/coach/dashboard", icon: LayoutDashboard, permission: "dashboard" },
+      { label: "Change Email", path: "/coach/change-email", icon: ShieldCheck },
+      { label: "Change Password", path: "/coach/change-password", icon: KeyRound },
+    ],
+  },
+];
+
+export const STUDENT_SIDEBAR: SidebarGroup[] = [
+  {
+    title: "Main",
+    items: [
+      { label: "Dashboard", path: "/student/dashboard", icon: LayoutDashboard, permission: "dashboard" },
+      { label: "Change Email", path: "/student/change-email", icon: ShieldCheck },
+      { label: "Change Password", path: "/student/change-password", icon: KeyRound },
     ],
   },
 ];

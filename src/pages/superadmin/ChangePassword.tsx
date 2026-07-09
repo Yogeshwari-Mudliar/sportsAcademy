@@ -2,16 +2,28 @@ import { useEffect, useMemo, useState } from "react";
 import { Eye, EyeOff, KeyRound } from "lucide-react";
 import { useAppDispatch } from "../../app/hooks";
 import { setPageHeader } from "../../features/ui/uiSlice";
+import { ROLES, type Role } from "../../constants/roles";
+import AccountRoleTabs from "../../components/superadmin/AccountRoleTabs";
 import SuperAdminTable from "../../components/superadmin/SuperAdminTable";
 import {
-  getSuperAdmins,
+  getManageableAccountUsers,
   updateAdminPasswords,
   validatePasswordStrength,
 } from "../../data/account";
 import "../../styles/superadmin/account.css";
 
+const ROLE_ORDER: Role[] = [ROLES.superadmin, ROLES.admin, ROLES.coach, ROLES.student];
+
+function getAvailableRoles() {
+  const users = getManageableAccountUsers();
+  const roles = ROLE_ORDER.filter((role) => users.some((user) => user.role === role));
+  return roles.length ? roles : [ROLES.student];
+}
+
 export default function ChangePassword() {
   const dispatch = useAppDispatch();
+  const [availableRoles] = useState<Role[]>(getAvailableRoles);
+  const [activeRole, setActiveRole] = useState<Role>(() => getAvailableRoles()[0]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,8 +39,11 @@ export default function ChangePassword() {
   const [submitting, setSubmitting] = useState(false);
 
   const selectedAdmins = useMemo(
-    () => getSuperAdmins().filter((a) => selectedIds.includes(a.id)),
-    [selectedIds]
+    () =>
+      getManageableAccountUsers().filter(
+        (a) => selectedIds.includes(a.id) && a.role === activeRole
+      ),
+    [activeRole, selectedIds]
   );
 
   useEffect(() => {
@@ -46,7 +61,7 @@ export default function ChangePassword() {
 
     const selectionError =
       selectedIds.length === 0
-        ? "Select at least one super admin, or use Select All."
+        ? "Select at least one user, or use Select All."
         : "";
     const newPasswordError = validatePasswordStrength(newPassword);
     let confirmPasswordError = "";
@@ -75,7 +90,7 @@ export default function ChangePassword() {
     }
 
     setSuccess(
-      `Password updated for ${result.count} super admin${result.count > 1 ? "s" : ""}.`
+      `Password updated for ${result.count} user${result.count > 1 ? "s" : ""}.`
     );
     setNewPassword("");
     setConfirmPassword("");
@@ -86,16 +101,27 @@ export default function ChangePassword() {
     <div className="dashboard-page account-page-wide">
       <div className="account-layout">
         <section className="account-panel">
-          <h2 className="account-panel-title">Super Admin List</h2>
+          <h2 className="account-panel-title">User List</h2>
           <p className="account-help">
-            Select one or more super admins. Use Select All to apply the same
-            password to everyone.
+            Select one or more permitted users. Use Select All to apply the same
+            password to everyone shown.
           </p>
+          <AccountRoleTabs
+            roles={availableRoles}
+            activeRole={activeRole}
+            onRoleChange={(role) => {
+              setActiveRole(role);
+              setSelectedIds([]);
+              setSuccess("");
+              setErrors((prev) => ({ ...prev, selection: "", form: "" }));
+            }}
+          />
 
           <SuperAdminTable
             mode="multiple"
             selectedIds={selectedIds}
             onSelectionChange={setSelectedIds}
+            roleFilter={activeRole}
           />
           {errors.selection && (
             <p className="account-error account-error-block">{errors.selection}</p>
@@ -120,7 +146,7 @@ export default function ChangePassword() {
         <section className="account-panel">
           <h2 className="account-panel-title">Set New Password</h2>
           <p className="account-help">
-            The same new password will be applied to all selected super admins.
+            The same new password will be applied to all selected users.
           </p>
 
           <form onSubmit={handleSubmit}>

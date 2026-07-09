@@ -1,4 +1,5 @@
 import { mockUsers } from "./mockUsers";
+import { ROLES, isRole, type Role } from "../constants/roles";
 
 const USERS_KEY = "account_users";
 const USER_KEY = "user";
@@ -10,15 +11,23 @@ export interface AccountUser {
   email: string;
   mobile: string;
   password: string;
-  role: string;
+  role: Role;
+}
+
+function normalizeUser(user: AccountUser): AccountUser {
+  const normalizedRole = String(user.role).toLowerCase();
+  return {
+    ...user,
+    role: isRole(normalizedRole) ? normalizedRole : ROLES.student,
+  };
 }
 
 function readUsers(): AccountUser[] {
   try {
     const raw = localStorage.getItem(USERS_KEY);
     if (raw) {
-      const stored = JSON.parse(raw) as AccountUser[];
-      const mockList = mockUsers as AccountUser[];
+      const stored = (JSON.parse(raw) as AccountUser[]).map(normalizeUser);
+      const mockList = (mockUsers as AccountUser[]).map(normalizeUser);
       const merged = [...stored];
 
       for (const user of mockList) {
@@ -30,12 +39,12 @@ function readUsers(): AccountUser[] {
         localStorage.setItem(USERS_KEY, JSON.stringify(merged));
       }
 
-      return merged;
+      return merged.map(normalizeUser);
     }
   } catch {
     /* fall through */
   }
-  const users = mockUsers as AccountUser[];
+  const users = (mockUsers as AccountUser[]).map(normalizeUser);
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
   return users;
 }
@@ -50,13 +59,27 @@ export function getStoredUsers(): AccountUser[] {
 }
 
 export function getSuperAdmins(): AccountUser[] {
-  return readUsers().filter((u) => u.role === "superadmin");
+  return readUsers().filter((u) => u.role === ROLES.superadmin);
+}
+
+function canManageAccount(actor: AccountUser | null, target: AccountUser) {
+  if (!actor) return false;
+  if (actor.role === ROLES.superadmin) return true;
+  if (actor.role === ROLES.admin) {
+    return target.id === actor.id || target.role === ROLES.student;
+  }
+  return target.id === actor.id;
+}
+
+export function getManageableAccountUsers(): AccountUser[] {
+  const currentUser = getCurrentUser();
+  return readUsers().filter((user) => canManageAccount(currentUser, user));
 }
 
 export function getCurrentUser(): AccountUser | null {
   try {
     const raw = localStorage.getItem(USER_KEY);
-    return raw ? (JSON.parse(raw) as AccountUser) : null;
+    return raw ? normalizeUser(JSON.parse(raw) as AccountUser) : null;
   } catch {
     return null;
   }
@@ -87,16 +110,17 @@ export function updateAdminEmail(
   newEmail: string
 ): { success: true; user: AccountUser } | { success: false; error: string } {
   const users = readUsers();
+  const currentUser = getCurrentUser();
   const index = users.findIndex((u) => u.id === userId);
 
   if (index === -1) {
-    return { success: false, error: "Super admin not found." };
+    return { success: false, error: "User not found." };
   }
 
   const user = users[index];
 
-  if (user.role !== "superadmin") {
-    return { success: false, error: "Only super admin accounts can be updated here." };
+  if (!canManageAccount(currentUser, user)) {
+    return { success: false, error: "You do not have permission to update this account." };
   }
 
   const emailTaken = users.some(
@@ -123,10 +147,11 @@ export function updateAdminPasswords(
   newPassword: string
 ): { success: true; count: number } | { success: false; error: string } {
   if (userIds.length === 0) {
-    return { success: false, error: "Select at least one super admin." };
+    return { success: false, error: "Select at least one user." };
   }
 
   const users = readUsers();
+  const currentUser = getCurrentUser();
   let count = 0;
 
   for (const userId of userIds) {
@@ -134,7 +159,7 @@ export function updateAdminPasswords(
     if (index === -1) continue;
 
     const user = users[index];
-    if (user.role !== "superadmin") continue;
+    if (!canManageAccount(currentUser, user)) continue;
 
     const updated: AccountUser = { ...user, password: newPassword };
     users[index] = updated;
@@ -143,7 +168,7 @@ export function updateAdminPasswords(
   }
 
   if (count === 0) {
-    return { success: false, error: "No valid super admin selected." };
+    return { success: false, error: "No permitted user selected." };
   }
 
   writeUsers(users);
