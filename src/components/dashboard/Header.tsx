@@ -1,39 +1,22 @@
 // src/components/dashboard/Header.tsx
 
 import { useEffect, useRef, useState } from "react";
-import { Bell, Check, ChevronDown, Menu, Search } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { toggleSidebar } from "../../features/ui/uiSlice";
-import { getStoredUsers } from "../../data/account";
-import { ROLE_HOME_PATHS, ROLE_LABELS, ROLES, type Role } from "../../constants/roles";
-
-interface StoredUser {
-  id?: number;
-  name?: string;
-  email?: string;
-  role?: Role;
-}
-
-function getStoredUser(): StoredUser {
-  try {
-    const raw = localStorage.getItem("user");
-    return raw ? (JSON.parse(raw) as StoredUser) : {};
-  } catch {
-    return {};
-  }
-}
+import { getCurrentUser, logoutUser } from "../../data/account";
+import { ROLE_LABELS } from "../../constants/roles";
 
 export default function Header() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { pageHeader, sidebarCollapsed } = useAppSelector((state) => state.ui);
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<StoredUser>(() => getStoredUser());
+  const [user, setUser] = useState(() => getCurrentUser());
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
-const { title, breadcrumb } = pageHeader;
-  const roles: Role[] = [ROLES.superadmin, ROLES.admin, ROLES.coach, ROLES.student];
+  const { title, breadcrumb } = pageHeader;
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
@@ -46,14 +29,10 @@ const { title, breadcrumb } = pageHeader;
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const switchRole = (role: Role) => {
-    const nextUser = getStoredUsers().find((item) => item.role === role);
-    if (!nextUser) return;
-
-    localStorage.setItem("user", JSON.stringify(nextUser));
-    setUser(nextUser);
+  const handleLogout = () => {
+    logoutUser();
     setOpen(false);
-    navigate(ROLE_HOME_PATHS[role], { replace: true });
+    navigate("/", { replace: true });
   };
 
   return (
@@ -104,8 +83,8 @@ const { title, breadcrumb } = pageHeader;
 
             {sidebarCollapsed && (
               <div className="header-user-info">
-                <h4>{user.name || "Superadmin User"}</h4>
-                <span>{user.email || "superadmin@sportsacademy.com"}</span>
+                <h4>{user?.name || "User"}</h4>
+                <span>{user?.email || ""}</span>
               </div>
             )}
             <ChevronDown size={16} className={`header-user-caret ${open ? "open" : ""}`} />
@@ -113,24 +92,24 @@ const { title, breadcrumb } = pageHeader;
 
           {open && (
             <div className="header-user-menu">
-              <div className="header-user-menu-title">Switch Role</div>
-              {roles.map((role) => {
-                const active = user.role === role;
-                return (
-                  <button
-                    key={role}
-                    type="button"
-                    className={`header-role-option ${active ? "active" : ""}`}
-                    onClick={() => switchRole(role)}
-                  >
-                    <span>
-                      <strong>{ROLE_LABELS[role]}</strong>
-                      <small>{getStoredUsers().find((item) => item.role === role)?.email}</small>
-                    </span>
-                    {active && <Check size={16} />}
-                  </button>
-                );
-              })}
+              <div className="header-user-menu-title">Account</div>
+              <div className="px-3 py-2 text-xs text-[var(--text-muted)] border-b border-[var(--border-soft)]">
+                <p className="font-semibold text-[var(--text-primary)]">{user?.name}</p>
+                <p className="mt-0.5">{user?.email}</p>
+                <p className="mt-1 text-[10px] uppercase tracking-wide">
+                  {user?.role ? ROLE_LABELS[user.role] : ""}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="header-role-option w-full"
+                onClick={handleLogout}
+              >
+                <span className="flex items-center gap-2">
+                  <LogOut size={16} />
+                  <strong>Logout</strong>
+                </span>
+              </button>
             </div>
           )}
         </div>

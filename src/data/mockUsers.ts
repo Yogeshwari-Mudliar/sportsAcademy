@@ -38,6 +38,16 @@ export const mockUsers = [
     mobile: "9876543211",
     password: "Admin@123",
     role: "admin",
+    academyId: 7,
+  },
+  {
+    id: 8,
+    name: "Karan Verma",
+    email: "karan.admin@sportsacademy.com",
+    mobile: "9000011122",
+    password: "Admin@123",
+    role: "admin",
+    academyId: 6,
   },
   {
     id: 3,
@@ -46,6 +56,7 @@ export const mockUsers = [
     mobile: "9876543212",
     password: "Coach@123",
     role: "coach",
+    academyId: 1,
   },
   {
     id: 4,
@@ -54,5 +65,6 @@ export const mockUsers = [
     mobile: "9988776655",
     password: "Student@123",
     role: "student",
+    academyId: 1,
   },
 ];

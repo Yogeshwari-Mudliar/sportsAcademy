@@ -4,6 +4,7 @@ export type PermissionKey =
   | "dashboard"
   | "academies"
   | "createAcademy"
+  | "createLocation"
   | "manageUsers"
   | "changeCategories"
   | "changeEmail"
@@ -37,6 +38,11 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     key: "createAcademy",
     label: "Create Academy",
     description: "Create and edit academy records.",
+  },
+  {
+    key: "createLocation",
+    label: "Add Location",
+    description: "Add a new branch/location under own academy brand.",
   },
   {
     key: "manageUsers",
@@ -84,7 +90,7 @@ const ALL_PERMISSIONS = PERMISSION_MODULES.map((module) => module.key);
 
 const DEFAULT_ROLE_PERMISSIONS: Record<Role, PermissionKey[]> = {
   [ROLES.superadmin]: ALL_PERMISSIONS,
-  [ROLES.admin]: ["dashboard", "students", "coaches", "settings", "changeEmail", "changePassword"],
+  [ROLES.admin]: ["dashboard", "academies", "createLocation", "students", "coaches", "settings", "changeEmail", "changePassword"],
   [ROLES.coach]: ["dashboard", "changeEmail", "changePassword"],
   [ROLES.student]: ["dashboard", "changeEmail", "changePassword"],
 };
@@ -102,9 +108,12 @@ export function getRolePermissions(): Record<Role, PermissionKey[]> {
       const stored = JSON.parse(raw) as Partial<Record<Role, PermissionKey[]>>;
       return {
         [ROLES.superadmin]: ALL_PERMISSIONS,
-        [ROLES.admin]: sanitizePermissions(stored[ROLES.admin]).length
-          ? sanitizePermissions(stored[ROLES.admin])
-          : DEFAULT_ROLE_PERMISSIONS[ROLES.admin],
+        [ROLES.admin]: (() => {
+          const adminPerms = sanitizePermissions(stored[ROLES.admin]);
+          const defaults = DEFAULT_ROLE_PERMISSIONS[ROLES.admin];
+          if (!adminPerms.length) return defaults;
+          return Array.from(new Set<PermissionKey>([...adminPerms, ...defaults]));
+        })(),
         [ROLES.coach]: sanitizePermissions(stored[ROLES.coach]).length
           ? sanitizePermissions(stored[ROLES.coach])
           : DEFAULT_ROLE_PERMISSIONS[ROLES.coach],

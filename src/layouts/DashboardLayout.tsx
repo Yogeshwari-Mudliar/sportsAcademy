@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/dashboard/Sidebar";
 import Header from "../components/dashboard/Header";
+import { AcademyProvider } from "../context/AcademyContext";
 import { useAppSelector } from "../app/hooks";
 import { applyThemeColor } from "../theme";
 import "../styles/common/dashboardLayout.css";
@@ -15,16 +16,18 @@ export default function DashboardLayout() {
   }, [themeColor]);
 
   return (
-    <div className="dashboard-layout">
-      <Sidebar />
+    <AcademyProvider>
+      <div className="dashboard-layout">
+        <Sidebar />
 
-      <main className="dashboard-main">
-        <Header />
+        <main className="dashboard-main">
+          <Header />
 
-        <section className="dashboard-content">
-          <Outlet />
-        </section>
-      </main>
-    </div>
+          <section className="dashboard-content">
+            <Outlet />
+          </section>
+        </main>
+      </div>
+    </AcademyProvider>
   );
 }

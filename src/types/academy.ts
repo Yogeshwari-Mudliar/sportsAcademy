@@ -25,6 +25,8 @@ export type AcademyStatus = "Active" | "Inactive" | "Pending";
 
 export interface AcademyListItem {
   id: number;
+  /** Brand/organization id — multiple locations share the same brandId */
+  brandId: number;
   name: string;
   logo: string;
   city: string;

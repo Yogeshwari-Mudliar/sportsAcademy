@@ -38,6 +38,7 @@ interface ActionButtonsProps {
   onDeactivate: (id: number) => void;
   onApprove: (id: number) => void;
   showLabels?: boolean;
+  showManageActions?: boolean;
 }
 
 function ActionButtons({
@@ -47,6 +48,7 @@ function ActionButtons({
   onDeactivate,
   onApprove,
   showLabels = false,
+  showManageActions = true,
 }: ActionButtonsProps) {
   const sizeClass = showLabels
     ? "h-9 px-2.5 text-[11px] font-semibold flex-1 min-w-0"
@@ -60,53 +62,69 @@ function ActionButtons({
           : "flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap"
       }
     >
-      <button
-        type="button"
-        onClick={() => onEdit(academy.id)}
-        className={`${actionBtnBase} ${sizeClass} border-blue-100 text-blue-600 hover:bg-blue-50`}
-        title="Edit"
-        aria-label="Edit academy"
-      >
-        <Edit3 size={14} className="shrink-0" />
-        {showLabels && <span className="truncate">Edit</span>}
-      </button>
-      <button
-        type="button"
-        onClick={() => onView(academy)}
-        className={`${actionBtnBase} ${sizeClass} border-gray-200 text-gray-600 hover:bg-gray-50`}
-        title="View"
-        aria-label="View academy"
-      >
-        <Eye size={14} className="shrink-0" />
-        {showLabels && <span className="truncate">View</span>}
-      </button>
-      <button
-        type="button"
-        onClick={() => onDeactivate(academy.id)}
-        disabled={academy.status === "Inactive"}
-        className={`${actionBtnBase} ${sizeClass} border-red-100 text-red-500 hover:bg-red-50`}
-        title="Deactivate"
-        aria-label="Deactivate academy"
-      >
-        <Ban size={14} className="shrink-0" />
-        {showLabels && <span className="truncate">Deactivate</span>}
-      </button>
-      <button
-        type="button"
-        onClick={() => onApprove(academy.id)}
-        disabled={academy.status !== "Pending"}
-        className={`${actionBtnBase} ${sizeClass} border-green-100 text-green-600 hover:bg-green-50`}
-        title="Pending Approve"
-        aria-label="Approve academy"
-      >
-        <CheckCircle2 size={14} className="shrink-0" />
-        {showLabels && <span className="truncate">Approve</span>}
-      </button>
+      {showManageActions && (
+        <>
+          <button
+            type="button"
+            onClick={() => onEdit(academy.id)}
+            className={`${actionBtnBase} ${sizeClass} border-blue-100 text-blue-600 hover:bg-blue-50`}
+            title="Edit"
+            aria-label="Edit academy"
+          >
+            <Edit3 size={14} className="shrink-0" />
+            {showLabels && <span className="truncate">Edit</span>}
+          </button>
+          <button
+            type="button"
+            onClick={() => onView(academy)}
+            className={`${actionBtnBase} ${sizeClass} border-gray-200 text-gray-600 hover:bg-gray-50`}
+            title="View"
+            aria-label="View academy"
+          >
+            <Eye size={14} className="shrink-0" />
+            {showLabels && <span className="truncate">View</span>}
+          </button>
+          <button
+            type="button"
+            onClick={() => onDeactivate(academy.id)}
+            disabled={academy.status === "Inactive"}
+            className={`${actionBtnBase} ${sizeClass} border-red-100 text-red-500 hover:bg-red-50`}
+            title="Deactivate"
+            aria-label="Deactivate academy"
+          >
+            <Ban size={14} className="shrink-0" />
+            {showLabels && <span className="truncate">Deactivate</span>}
+          </button>
+          <button
+            type="button"
+            onClick={() => onApprove(academy.id)}
+            disabled={academy.status !== "Pending"}
+            className={`${actionBtnBase} ${sizeClass} border-green-100 text-green-600 hover:bg-green-50`}
+            title="Pending Approve"
+            aria-label="Approve academy"
+          >
+            <CheckCircle2 size={14} className="shrink-0" />
+            {showLabels && <span className="truncate">Approve</span>}
+          </button>
+        </>
+      )}
     </div>
   );
 }
 
-export default function AcademyList() {
+export default function AcademyList({
+  detailBasePath = "/superadmin/academies",
+  filterByBrandId,
+  showCreateButton = true,
+  showAddLocationButton = false,
+  addLocationPath = "/admin/academies/add-location",
+}: {
+  detailBasePath?: string;
+  filterByBrandId?: number;
+  showCreateButton?: boolean;
+  showAddLocationButton?: boolean;
+  addLocationPath?: string;
+} = {}) {
   const navigate = useNavigate();
   const [academies, setAcademies] = useState<AcademyListItem[]>(() => getAcademies());
   const [search, setSearch] = useState("");
@@ -152,8 +170,14 @@ export default function AcademyList() {
       !query || academy.name.toLowerCase().includes(query);
     const matchesType = !activeType || academy.type === activeType;
     const matchesStatus = !activeStatus || academy.status === activeStatus;
-    return matchesSearch && matchesType && matchesStatus;
+    const matchesScope =
+      filterByBrandId === undefined || academy.brandId === filterByBrandId;
+    return matchesSearch && matchesType && matchesStatus && matchesScope;
   });
+
+  const handleOpenAcademy = (id: number) => {
+    navigate(`${detailBasePath}/${id}/students`);
+  };
 
   const handleEdit = (id: number) => {
     setViewing(null);
@@ -191,6 +215,7 @@ export default function AcademyList() {
     onView: handleView,
     onDeactivate: handleDeactivate,
     onApprove: handleApprove,
+    showManageActions: showCreateButton,
   };
 
   return (
@@ -199,19 +224,34 @@ export default function AcademyList() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-gray-100">
           <div className="min-w-0">
             <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] truncate">
-              Academy List
+              {filterByBrandId !== undefined ? "My Academy" : "Academy List"}
             </h2>
             <p className="text-xs text-[var(--text-muted)] mt-1">
-              View and manage all academies on the platform.
+              {filterByBrandId !== undefined
+                ? "All locations of your academy brand. Click a row to manage members."
+                : "View and manage all academies on the platform."}
             </p>
           </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto shrink-0">
+          {showAddLocationButton && (
+            <Link
+              to={addLocationPath}
+              className="h-10 px-4 text-xs font-semibold rounded-xl border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition inline-flex items-center justify-center gap-2 w-full sm:w-auto touch-manipulation"
+            >
+              <Plus size={16} />
+              Add Location
+            </Link>
+          )}
+          {showCreateButton && (
           <Link
             to="/superadmin/academies/create"
-            className="h-10 px-4 text-xs font-semibold rounded-xl bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white transition inline-flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto shrink-0 touch-manipulation"
+            className="h-10 px-4 text-xs font-semibold rounded-xl bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white transition inline-flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto touch-manipulation"
           >
             <Plus size={16} />
             Create Academy
           </Link>
+          )}
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap gap-3 py-4 sm:py-6">
@@ -281,7 +321,11 @@ export default function AcademyList() {
               {filteredAcademies.map((academy) => (
                 <li
                   key={academy.id}
-                  className="rounded-xl border border-gray-100 bg-gray-50/40 p-3 sm:p-4"
+                  className="rounded-xl border border-gray-100 bg-gray-50/40 p-3 sm:p-4 cursor-pointer hover:border-[var(--accent)]/30 hover:bg-[var(--accent)]/5 transition"
+                  onClick={() => handleOpenAcademy(academy.id)}
+                  onKeyDown={(e) => e.key === "Enter" && handleOpenAcademy(academy.id)}
+                  role="button"
+                  tabIndex={0}
                 >
                   <div className="flex items-start gap-3">
                     <img
@@ -291,7 +335,7 @@ export default function AcademyList() {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-sm sm:text-base text-[var(--text-primary)] leading-snug break-words">
+                        <h3 className="font-semibold text-sm sm:text-base text-[var(--text-primary)] leading-snug break-words hover:text-[var(--accent)] transition">
                           {academy.name}
                         </h3>
                         <span
@@ -315,9 +359,11 @@ export default function AcademyList() {
                       </span>
                     </div>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-gray-100">
+                  {showCreateButton && (
+                  <div className="mt-3 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
                     <ActionButtons academy={academy} showLabels {...actionProps} />
                   </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -333,17 +379,23 @@ export default function AcademyList() {
                 <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
                   <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Logo</th>
                   <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Academy Name</th>
-                  <th className="py-3 px-3 xl:px-4 whitespace-nowrap">City</th>
+                  <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Location</th>
                   <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Type</th>
                   <th className="py-3 px-3 xl:px-4 whitespace-nowrap">No. of Students</th>
                   <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Status</th>
-                  <th className="py-3 px-3 xl:px-4 text-center whitespace-nowrap">Actions</th>
+                  {showCreateButton && (
+                    <th className="py-3 px-3 xl:px-4 text-center whitespace-nowrap">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {filteredAcademies.length > 0 ? (
                   filteredAcademies.map((academy) => (
-                    <tr key={academy.id} className="hover:bg-gray-50/50 transition">
+                    <tr
+                      key={academy.id}
+                      className="hover:bg-gray-50/50 transition cursor-pointer"
+                      onClick={() => handleOpenAcademy(academy.id)}
+                    >
                       <td className="py-3.5 px-3 xl:px-4">
                         <img
                           src={academy.logo}
@@ -352,7 +404,7 @@ export default function AcademyList() {
                         />
                       </td>
                       <td className="py-3.5 px-3 xl:px-4 max-w-[200px] xl:max-w-none">
-                        <p className="font-semibold text-[var(--text-primary)] truncate">
+                        <p className="font-semibold text-[var(--text-primary)] truncate hover:text-[var(--accent)] transition">
                           {academy.name}
                         </p>
                       </td>
@@ -374,14 +426,14 @@ export default function AcademyList() {
                           {academy.status}
                         </span>
                       </td>
-                      <td className="py-3.5 px-3 xl:px-4">
-                        <ActionButtons academy={academy} {...actionProps} />
+                      <td className="py-3.5 px-3 xl:px-4" onClick={(e) => e.stopPropagation()}>
+                        {showCreateButton && <ActionButtons academy={academy} {...actionProps} />}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7}>{emptyState}</td>
+                    <td colSpan={showCreateButton ? 7 : 6}>{emptyState}</td>
                   </tr>
                 )}
               </tbody>

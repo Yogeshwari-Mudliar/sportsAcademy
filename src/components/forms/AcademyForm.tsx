@@ -13,6 +13,8 @@ import "../../styles/superadmin/createAcademy.css";
 interface AcademyFormProps {
   mode?: "create" | "edit";
   initialData?: AcademyFormData;
+  lockedFields?: (keyof AcademyFormData)[];
+  submitLabel?: string;
   onSubmit?: (data: AcademyFormData) => void;
   onCancel?: () => void;
 }
@@ -20,6 +22,8 @@ interface AcademyFormProps {
 export default function AcademyForm({
   mode = "create",
   initialData,
+  lockedFields = [],
+  submitLabel,
   onSubmit,
   onCancel,
 }: AcademyFormProps) {
@@ -85,6 +89,8 @@ export default function AcademyForm({
     setForm(initialData ?? EMPTY_ACADEMY_FORM);
   };
 
+  const isLocked = (field: keyof AcademyFormData) => lockedFields.includes(field);
+
   return (
     <form className="academy-form" onSubmit={handleSubmit}>
       <div className="academy-grid">
@@ -101,6 +107,7 @@ export default function AcademyForm({
                 placeholder="Enter academy name"
                 value={form.name}
                 onChange={(e) => update("name", e.target.value)}
+                readOnly={isLocked("name")}
                 required
               />
             </div>
@@ -114,6 +121,7 @@ export default function AcademyForm({
                 placeholder="Enter owner full name"
                 value={form.ownerName}
                 onChange={(e) => update("ownerName", e.target.value)}
+                readOnly={isLocked("ownerName")}
                 required
               />
             </div>
@@ -130,6 +138,7 @@ export default function AcademyForm({
                 placeholder="Enter email address"
                 value={form.email}
                 onChange={(e) => update("email", e.target.value)}
+                readOnly={isLocked("email")}
                 required
               />
             </div>
@@ -147,6 +156,7 @@ export default function AcademyForm({
                   placeholder="Enter phone number"
                   value={form.phone}
                   onChange={(e) => update("phone", e.target.value)}
+                  readOnly={isLocked("phone")}
                   required
                 />
               </div>
@@ -431,7 +441,7 @@ export default function AcademyForm({
             </>
           ) : (
             <>
-              <Plus size={18} /> Create Academy
+              <Plus size={18} /> {submitLabel ?? "Create Academy"}
             </>
           )}
         </button>

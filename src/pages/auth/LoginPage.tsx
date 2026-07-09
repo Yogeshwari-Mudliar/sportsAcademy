@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import bgImage from "../../assets/sports-bg 2.png";
-import { authenticateUser } from "../../data/account";
+import { authenticateUser, logoutUser } from "../../data/account";
 import { useNavigate } from "react-router-dom";
 import { ROLE_HOME_PATHS, isRole } from "../../constants/roles";
 
@@ -85,9 +85,9 @@ const LoginPage = () => {
       return;
     }
 
+    logoutUser();
     localStorage.setItem("user", JSON.stringify(user));
 
-    alert(`Welcome ${user.name}`);
     navigate(isRole(user.role) ? ROLE_HOME_PATHS[user.role] : "/");
   };
 

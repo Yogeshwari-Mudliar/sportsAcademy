@@ -16,16 +16,54 @@ import AcademyListPage from "@/pages/superadmin/AcademyList";
 import EditAcademy from "@/pages/superadmin/EditAcademy";
 import ChangeEmail from "@/pages/superadmin/ChangeEmail";
 import ChangePassword from "@/pages/superadmin/ChangePassword";
-import AdminDashboard from "@/pages/admin/Dashboard";
-import AdminStudents from "@/pages/admin/Students";
-import AdminCoaches from "@/pages/admin/Coaches";
 import AdminSettings from "@/pages/admin/Settings";
 import CoachDashboard from "@/pages/coach/Dashboard";
 import StudentDashboard from "@/pages/student/Dashboard";
+import CoachesPage from "@/pages/shared/CoachesPage";
+import StudentsPage from "@/pages/shared/StudentsPage";
 import RoleGuard from "./RoleGuard";
 import PermissionGuard from "./PermissionGuard";
 import { ROLES } from "@/constants/roles";
 import RolesPermissions from "@/pages/superadmin/RolesPermissions";
+import AcademyDetailRoute from "@/pages/academy/AcademyDetailRoute";
+import AcademyStudentsTab from "@/pages/academy/AcademyStudentsTab";
+import AcademyCoachesTab from "@/pages/academy/AcademyCoachesTab";
+import AcademyAdminsTab from "@/pages/academy/AcademyAdminsTab";
+import AcademyAccessoryTab from "@/pages/academy/AcademyAccessoryTab";
+import AddLocationPage from "@/pages/admin/AddLocation";
+
+const managementRoutes = (
+  <>
+    <Route element={<PermissionGuard permission="dashboard" />}>
+      <Route path="dashboard" element={<Dashboard />} />
+    </Route>
+      <Route element={<PermissionGuard permission="createAcademy" />}>
+        <Route path="academies/create" element={<CreateAcademy />} />
+        <Route path="academies/:id/edit" element={<EditAcademy />} />
+      </Route>
+      <Route element={<PermissionGuard permission="createLocation" />}>
+        <Route path="academies/add-location" element={<AddLocationPage />} />
+      </Route>
+    <Route element={<PermissionGuard permission="academies" />}>
+      <Route path="academies" element={<AcademyListPage />} />
+      <Route path="academies/:id" element={<AcademyDetailRoute />}>
+        <Route index element={<Navigate to="students" replace />} />
+        <Route path="students" element={<AcademyStudentsTab />} />
+        <Route path="coaches" element={<AcademyCoachesTab />} />
+        <Route path="admins" element={<AcademyAdminsTab />} />
+        <Route path="accessory" element={<AcademyAccessoryTab />} />
+      </Route>
+    </Route>
+    <Route element={<PermissionGuard permission="students" />}>
+      <Route path="students" element={<StudentsPage />} />
+    </Route>
+    <Route element={<PermissionGuard permission="coaches" />}>
+      <Route path="coaches" element={<CoachesPage />} />
+    </Route>
+    <Route path="change-email" element={<ChangeEmail />} />
+    <Route path="change-password" element={<ChangePassword />} />
+  </>
+);
 
 const AppRoutes = () => {
   return (
@@ -36,24 +74,13 @@ const AppRoutes = () => {
         <Route element={<RoleGuard allowedRoles={[ROLES.superadmin]} />}>
           <Route path="/superadmin" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route element={<PermissionGuard permission="dashboard" />}>
-              <Route path="dashboard" element={<Dashboard />} />
-            </Route>
+            {managementRoutes}
             <Route element={<PermissionGuard permission="manageUsers" />}>
               <Route path="ManageUsers" element={<ManageUsers />} />
-            </Route>
-            <Route element={<PermissionGuard permission="academies" />}>
-              <Route path="academies" element={<AcademyListPage />} />
-            </Route>
-            <Route element={<PermissionGuard permission="createAcademy" />}>
-              <Route path="academies/create" element={<CreateAcademy />} />
-              <Route path="academies/:id/edit" element={<EditAcademy />} />
             </Route>
             <Route element={<PermissionGuard permission="settings" />}>
               <Route path="settings" element={<Settings />} />
             </Route>
-            <Route path="change-email" element={<ChangeEmail />} />
-            <Route path="change-password" element={<ChangePassword />} />
             <Route element={<PermissionGuard permission="rolesPermissions" />}>
               <Route path="roles" element={<RolesPermissions />} />
             </Route>
@@ -72,20 +99,10 @@ const AppRoutes = () => {
         <Route element={<RoleGuard allowedRoles={[ROLES.admin]} />}>
           <Route path="/admin" element={<DashboardLayout />}>
             <Route index element={<Navigate to="dashboard" replace />} />
-            <Route element={<PermissionGuard permission="dashboard" />}>
-              <Route path="dashboard" element={<AdminDashboard />} />
-            </Route>
-            <Route element={<PermissionGuard permission="students" />}>
-              <Route path="students" element={<AdminStudents />} />
-            </Route>
-            <Route element={<PermissionGuard permission="coaches" />}>
-              <Route path="coaches" element={<AdminCoaches />} />
-            </Route>
+            {managementRoutes}
             <Route element={<PermissionGuard permission="settings" />}>
               <Route path="settings" element={<AdminSettings />} />
             </Route>
-            <Route path="change-email" element={<ChangeEmail />} />
-            <Route path="change-password" element={<ChangePassword />} />
           </Route>
         </Route>
 

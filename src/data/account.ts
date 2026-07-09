@@ -12,6 +12,7 @@ export interface AccountUser {
   mobile: string;
   password: string;
   role: Role;
+  academyId?: number;
 }
 
 function normalizeUser(user: AccountUser): AccountUser {
@@ -31,8 +32,12 @@ function readUsers(): AccountUser[] {
       const merged = [...stored];
 
       for (const user of mockList) {
-        const exists = merged.some((u) => u.id === user.id);
-        if (!exists) merged.push(user);
+        const index = merged.findIndex((u) => u.id === user.id);
+        if (index === -1) {
+          merged.push(user);
+        } else if (user.academyId !== undefined && merged[index].academyId === undefined) {
+          merged[index] = { ...merged[index], academyId: user.academyId };
+        }
       }
 
       if (merged.length !== stored.length) {
@@ -74,6 +79,15 @@ function canManageAccount(actor: AccountUser | null, target: AccountUser) {
 export function getManageableAccountUsers(): AccountUser[] {
   const currentUser = getCurrentUser();
   return readUsers().filter((user) => canManageAccount(currentUser, user));
+}
+
+export function getUserAcademyId(): number | undefined {
+  return getCurrentUser()?.academyId;
+}
+
+export function logoutUser() {
+  localStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem("active_academy_id");
 }
 
 export function getCurrentUser(): AccountUser | null {
