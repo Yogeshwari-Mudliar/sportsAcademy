@@ -34,8 +34,23 @@
 }
 
 .dashboard-content {
-  padding: 24px 28px 40px;
+  padding: 16px;
   flex: 1;
+  min-width: 0;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+@media (min-width: 640px) {
+  .dashboard-content {
+    padding: 20px 24px 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-content {
+    padding: 24px 28px 40px;
+  }
 }
 body {
   background: var(--bg-app);

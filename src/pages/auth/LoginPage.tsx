@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import bgImage from "../../assets/sports-bg 2.png";
-import { mockUsers } from "../../data/mockUsers";
+import { authenticateUser, logoutUser } from "../../data/account";
 import { useNavigate } from "react-router-dom";
-import { ROLES } from "../../constants/roles";
+import { ROLE_HOME_PATHS, isRole } from "../../constants/roles";
 
 const LoginPage = () => {
   const [view, setView] = useState<"login" | "forgot" | "otp" | "reset-password">("login");
@@ -29,7 +29,7 @@ const LoginPage = () => {
     newPassword: "",
     confirmPassword: "",
   });
-const navigate = useNavigate();
+  const navigate = useNavigate();
   const validateEmailOrMobile = (value: string) => {
     const trimmed = value.trim();
 
@@ -78,44 +78,17 @@ const navigate = useNavigate();
     setErrors((prev) => ({ ...prev, username: usernameError, password: passwordError }));
     if (usernameError || passwordError) return;
 
-    const user = mockUsers.find(
-      (u) =>
-        (u.email.toLowerCase() === username.toLowerCase() || u.mobile === username) &&
-        u.password === password
-    );
+    const user = authenticateUser(username, password);
 
     if (!user) {
       setErrors((prev) => ({ ...prev, password: "Invalid email/mobile number or password" }));
       return;
     }
 
-    console.log("Login Success", user);
+    logoutUser();
     localStorage.setItem("user", JSON.stringify(user));
 
-alert(`Welcome ${user.name}`);
-
-console.log("Login Success", user);
-
-switch (user.role) {
-  case ROLES.superadmin:
-    navigate("/superadmin/dashboard");
-    break;
-
-  case ROLES.ADMIN:
-    navigate("/admin/dashboard");
-    break;
-
-  case ROLES.COACH:
-    navigate("/coach/dashboard");
-    break;
-
-  case ROLES.STUDENT:
-    navigate("/student/dashboard");
-    break;
-
-  default:
-    navigate("/");
-}
+    navigate(isRole(user.role) ? ROLE_HOME_PATHS[user.role] : "/");
   };
 
   const handleForgotPasswordSubmit = (e: React.FormEvent) => {

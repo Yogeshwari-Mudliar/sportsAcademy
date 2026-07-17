@@ -13,63 +13,6 @@ export const THEME_PRESETS = [
   { name: "Teal", color: "#04313a" },
 ];
 
-function clamp(value: number): number {
-  return Math.max(0, Math.min(255, Math.round(value)));
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  let h = hex.replace("#", "");
-
-  if (h.length === 3) {
-    h = h
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  }
-
-  const num = parseInt(h, 16);
-
-  return [
-    (num >> 16) & 255,
-    (num >> 8) & 255,
-    num & 255,
-  ];
-}
-
-function rgbToHex(
-  r: number,
-  g: number,
-  b: number
-): string {
-  return (
-    "#" +
-    [r, g, b]
-      .map((v) =>
-        clamp(v)
-          .toString(16)
-          .padStart(2, "0")
-      )
-      .join("")
-  );
-}
-
-function mix(
-  hex: string,
-  target: [number, number, number],
-  weight: number
-): string {
-  const [r, g, b] = hexToRgb(hex);
-  const [tr, tg, tb] = target;
-
-  return rgbToHex(
-    r * (1 - weight) + tr * weight,
-    g * (1 - weight) + tg * weight,
-    b * (1 - weight) + tb * weight
-  );
-}
-
-
-
 export function isValidHexColor(
   value: string
 ): boolean {
@@ -159,4 +102,4 @@ export function storeThemeColor(
       base
     );
   } catch {}
-}
+}

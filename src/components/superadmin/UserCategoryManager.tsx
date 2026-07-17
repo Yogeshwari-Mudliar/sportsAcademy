@@ -9,33 +9,39 @@ interface User {
 }
 
 interface UserCategoryManagerProps {
-  role: "Admin" | "Coach" | "Student";
+  role: "Super Admin" | "Admin" | "Coach" | "Student";
 }
 
 const defaultUsers: User[] = [
   {
     id: 1,
+    name: "Superadmin User",
+    category: "Super Admin",
+    email: "superadmin@sportsacademy.com",
+  },
+  {
+    id: 2,
     name: "Rahul Sharma",
     category: "Admin",
     email: "rahul@gmail.com",
   },
   {
-    id: 2,
+    id: 3,
     name: "Amit Patel",
     category: "Coach",
     email: "amit@gmail.com",
   },
   {
-    id: 3,
+    id: 4,
     name: "Neha Jain",
     category: "Student",
     email: "neha@gmail.com",
   },
    {
-    id: 3,
-    name: "Neha Jain",
+    id: 5,
+    name: "Karan Singh",
     category: "Student",
-    email: "neha@gmail.com",
+    email: "karan@gmail.com",
   },
 ];
 
@@ -122,6 +128,8 @@ const UserCategoryManager: React.FC<UserCategoryManagerProps> = ({ role }) => {
 
   const getBadgeStyle = (userRole: string) => {
     switch (userRole) {
+      case "Super Admin":
+        return "bg-rose-50 text-rose-600 border border-rose-100";
       case "Admin":
         return "bg-purple-50 text-purple-600 border border-purple-100";
       case "Coach":
@@ -162,6 +170,7 @@ const UserCategoryManager: React.FC<UserCategoryManagerProps> = ({ role }) => {
             className="bg-[var(--bg-input)] border border-[var(--border-soft)] rounded-xl px-4 py-3  focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/10 focus:outline-none transition-all duration-300"
           >
             <option value="" className="bg-[var(--bg-panel)]">Change Role</option>
+            <option value="Super Admin" disabled={role === "Super Admin"} className="bg-[var(--bg-panel)] disabled:opacity-50">Super Admin</option>
             <option value="Admin" disabled={role === "Admin"} className="bg-[var(--bg-panel)] disabled:opacity-50">Admin</option>
             <option value="Coach" disabled={role === "Coach"} className="bg-[var(--bg-panel)] disabled:opacity-50">Coach</option>
             <option value="Student" disabled={role === "Student"} className="bg-[var(--bg-panel)] disabled:opacity-50">Student</option>
@@ -230,6 +239,7 @@ const UserCategoryManager: React.FC<UserCategoryManagerProps> = ({ role }) => {
                       <td className="p-2">
                         <div className="flex items-center gap-3">
                           <div className={`w-7 h-7 rounded-sm flex items-center justify-center font-bold shadow-sm ${
+                            role === "Super Admin" ? "bg-rose-50 text-rose-600" :
                             role === "Admin" ? "bg-purple-50 text-purple-600" :
                             role === "Coach" ? "bg-blue-50 text-blue-600" :
                             "bg-green-50 text-green-600"
@@ -241,6 +251,9 @@ const UserCategoryManager: React.FC<UserCategoryManagerProps> = ({ role }) => {
                               {user.name}
                               {role === "Admin" && (
                                 <Sparkles size={14} className="text-yellow-400" />
+                              )}
+                              {role === "Super Admin" && (
+                                <Sparkles size={14} className="text-rose-400" />
                               )}
                             </p>
                             <p className="text-xs text-[var(--text-faint)] font-mono">

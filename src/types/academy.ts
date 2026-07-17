@@ -5,12 +5,44 @@ export interface AcademyFormData {
   phone: string;
   addressLine1: string;
   addressLine2: string;
-  city: string;
+  /** ISO country code, e.g. "IN" */
+  country: string;
+  /** ISO state code, e.g. "MH" */
   state: string;
+  city: string;
   pincode: string;
   about: string;
   establishedYear: string;
   academyType: string;
+  facilities: string[];
+  website: string;
+  instagram: string;
+  facebook: string;
+  youtube: string;
+}
+
+export type AcademyStatus = "Active" | "Inactive" | "Pending";
+
+export interface AcademyListItem {
+  id: number;
+  /** Brand/organization id — multiple locations share the same brandId */
+  brandId: number;
+  name: string;
+  logo: string;
+  city: string;
+  type: string;
+  studentCount: number;
+  status: AcademyStatus;
+  ownerName: string;
+  email: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2: string;
+  country: string;
+  state: string;
+  pincode: string;
+  about: string;
+  establishedYear: string;
   facilities: string[];
   website: string;
   instagram: string;
@@ -39,27 +71,46 @@ export const ACADEMY_FACILITIES = [
   "Other",
 ];
 
-export const INDIAN_STATES = [
-  "Andhra Pradesh",
-  "Assam",
-  "Bihar",
-  "Chhattisgarh",
-  "Delhi",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Odisha",
-  "Punjab",
-  "Rajasthan",
-  "Tamil Nadu",
-  "Telangana",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal",
-];
+export const EMPTY_ACADEMY_FORM: AcademyFormData = {
+  name: "",
+  ownerName: "",
+  email: "",
+  phone: "",
+  addressLine1: "",
+  addressLine2: "",
+  country: "",
+  city: "",
+  state: "",
+  pincode: "",
+  about: "",
+  establishedYear: "",
+  academyType: "",
+  facilities: [],
+  website: "",
+  instagram: "",
+  facebook: "",
+  youtube: "",
+};
+
+export function academyToFormData(academy: AcademyListItem): AcademyFormData {
+  return {
+    name: academy.name,
+    ownerName: academy.ownerName,
+    email: academy.email,
+    phone: academy.phone,
+    addressLine1: academy.addressLine1,
+    addressLine2: academy.addressLine2,
+    country: academy.country,
+    state: academy.state,
+    city: academy.city,
+    pincode: academy.pincode,
+    about: academy.about,
+    establishedYear: academy.establishedYear,
+    academyType: academy.type,
+    facilities: academy.facilities,
+    website: academy.website,
+    instagram: academy.instagram,
+    facebook: academy.facebook,
+    youtube: academy.youtube,
+  };
+}
