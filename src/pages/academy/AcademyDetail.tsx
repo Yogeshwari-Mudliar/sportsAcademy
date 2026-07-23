@@ -88,9 +88,7 @@ export default function AcademyDetail({ basePath, listPath, breadcrumbRoot }: Ac
           className={`ml-auto shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${
             academy.status === "Active"
               ? "bg-green-50 text-green-600 border border-green-100"
-              : academy.status === "Inactive"
-              ? "bg-red-50 text-red-500 border border-red-100"
-              : "bg-orange-50 text-orange-600 border border-orange-100"
+              : "bg-red-50 text-red-500 border border-red-100"
           }`}
         >
           {academy.status}

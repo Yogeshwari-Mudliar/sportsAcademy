@@ -61,7 +61,7 @@ const INITIAL_ACADEMIES: AcademyListItem[] = [
     city: "Bangalore",
     type: "Coaching Center",
     studentCount: 320,
-    status: "Pending",
+    status: "Inactive",
     ownerName: "Sneha Iyer",
     email: "sneha@blsports.com",
     phone: "9987654321",
@@ -136,7 +136,7 @@ const INITIAL_ACADEMIES: AcademyListItem[] = [
     city: "Kolkata",
     type: "Multi-Sport Academy",
     studentCount: 156,
-    status: "Pending",
+    status: "Inactive",
     ownerName: "Karan Verma",
     email: "karan@kolkatacricket.com",
     phone: "9000011122",
@@ -206,10 +206,16 @@ const INITIAL_ACADEMIES: AcademyListItem[] = [
 ];
 
 function normalizeAcademies(list: AcademyListItem[]): AcademyListItem[] {
-  return list.map((academy) => ({
-    ...academy,
-    brandId: academy.brandId ?? academy.id,
-  }));
+  return list.map((academy) => {
+    const rawStatus = academy.status as string;
+    const status: AcademyListItem["status"] =
+      rawStatus === "Active" ? "Active" : "Inactive";
+    return {
+      ...academy,
+      brandId: academy.brandId ?? academy.id,
+      status,
+    };
+  });
 }
 
 function mergeWithSeed(stored: AcademyListItem[]): AcademyListItem[] {
@@ -276,6 +282,10 @@ export function updateAcademyStatus(id: number, status: AcademyStatus): AcademyL
   return list;
 }
 
+export function archiveAcademy(id: number): AcademyListItem[] {
+  return updateAcademyStatus(id, "Inactive");
+}
+
 export function updateAcademy(id: number, form: AcademyFormData): AcademyListItem[] {
   const list = getAcademies().map((a) =>
     a.id === id
@@ -318,7 +328,7 @@ export function createAcademy(form: AcademyFormData): AcademyListItem[] {
     city: form.city,
     type: form.academyType,
     studentCount: 0,
-    status: "Pending",
+    status: "Inactive",
     ownerName: form.ownerName,
     email: form.email,
     phone: form.phone,

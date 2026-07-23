@@ -1,11 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Search,
   RotateCcw,
-  Edit3,
-  Eye,
-  Ban,
-  CheckCircle2,
   Plus,
   MapPin,
   Users,
@@ -21,96 +17,16 @@ import {
   updateAcademyStatus,
 } from "@/data/academies";
 import AcademyViewModal from "./AcademyViewModal";
+import AcademyEditModal from "./AcademyEditModal";
+import TableRowActions from "@/components/table/TableRowActions";
+import TablePagination from "@/components/table/TablePagination";
+import { useCanManageTables } from "@/hooks/useCanManageTables";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 const statusStyles: Record<AcademyStatus, string> = {
   Active: "bg-green-50 text-green-600 border border-green-100",
   Inactive: "bg-red-50 text-red-500 border border-red-100",
-  Pending: "bg-orange-50 text-orange-600 border border-orange-100",
 };
-
-const actionBtnBase =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg border transition disabled:opacity-40 disabled:cursor-not-allowed touch-manipulation";
-
-interface ActionButtonsProps {
-  academy: AcademyListItem;
-  onEdit: (id: number) => void;
-  onView: (academy: AcademyListItem) => void;
-  onDeactivate: (id: number) => void;
-  onApprove: (id: number) => void;
-  showLabels?: boolean;
-  showManageActions?: boolean;
-}
-
-function ActionButtons({
-  academy,
-  onEdit,
-  onView,
-  onDeactivate,
-  onApprove,
-  showLabels = false,
-  showManageActions = true,
-}: ActionButtonsProps) {
-  const sizeClass = showLabels
-    ? "h-9 px-2.5 text-[11px] font-semibold flex-1 min-w-0"
-    : "p-1.5 sm:p-2";
-
-  return (
-    <div
-      className={
-        showLabels
-          ? "grid grid-cols-2 gap-2 w-full"
-          : "flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap"
-      }
-    >
-      {showManageActions && (
-        <>
-          <button
-            type="button"
-            onClick={() => onEdit(academy.id)}
-            className={`${actionBtnBase} ${sizeClass} border-blue-100 text-blue-600 hover:bg-blue-50`}
-            title="Edit"
-            aria-label="Edit academy"
-          >
-            <Edit3 size={14} className="shrink-0" />
-            {showLabels && <span className="truncate">Edit</span>}
-          </button>
-          <button
-            type="button"
-            onClick={() => onView(academy)}
-            className={`${actionBtnBase} ${sizeClass} border-gray-200 text-gray-600 hover:bg-gray-50`}
-            title="View"
-            aria-label="View academy"
-          >
-            <Eye size={14} className="shrink-0" />
-            {showLabels && <span className="truncate">View</span>}
-          </button>
-          <button
-            type="button"
-            onClick={() => onDeactivate(academy.id)}
-            disabled={academy.status === "Inactive"}
-            className={`${actionBtnBase} ${sizeClass} border-red-100 text-red-500 hover:bg-red-50`}
-            title="Deactivate"
-            aria-label="Deactivate academy"
-          >
-            <Ban size={14} className="shrink-0" />
-            {showLabels && <span className="truncate">Deactivate</span>}
-          </button>
-          <button
-            type="button"
-            onClick={() => onApprove(academy.id)}
-            disabled={academy.status !== "Pending"}
-            className={`${actionBtnBase} ${sizeClass} border-green-100 text-green-600 hover:bg-green-50`}
-            title="Pending Approve"
-            aria-label="Approve academy"
-          >
-            <CheckCircle2 size={14} className="shrink-0" />
-            {showLabels && <span className="truncate">Approve</span>}
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
 
 export default function AcademyList({
   detailBasePath = "/superadmin/academies",
@@ -126,14 +42,16 @@ export default function AcademyList({
   addLocationPath?: string;
 } = {}) {
   const navigate = useNavigate();
+  const canManage = useCanManageTables();
   const [academies, setAcademies] = useState<AcademyListItem[]>(() => getAcademies());
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [activeSearch, setActiveSearch] = useState("");
-  const [activeType, setActiveType] = useState("");
-  const [activeStatus, setActiveStatus] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [viewing, setViewing] = useState<AcademyListItem | null>(null);
+  const [editing, setEditing] = useState<AcademyListItem | null>(null);
 
   const refresh = useCallback(() => {
     setAcademies(getAcademies());
@@ -149,58 +67,60 @@ export default function AcademyList({
     };
   }, [refresh]);
 
-  const handleFilter = () => {
-    setActiveSearch(search);
-    setActiveType(typeFilter);
-    setActiveStatus(statusFilter);
-  };
-
   const handleReset = () => {
     setSearch("");
     setTypeFilter("");
     setStatusFilter("");
-    setActiveSearch("");
-    setActiveType("");
-    setActiveStatus("");
   };
 
-  const filteredAcademies = academies.filter((academy) => {
-    const query = activeSearch.toLowerCase().trim();
-    const matchesSearch =
-      !query || academy.name.toLowerCase().includes(query);
-    const matchesType = !activeType || academy.type === activeType;
-    const matchesStatus = !activeStatus || academy.status === activeStatus;
-    const matchesScope =
-      filterByBrandId === undefined || academy.brandId === filterByBrandId;
-    return matchesSearch && matchesType && matchesStatus && matchesScope;
-  });
+  const filteredAcademies = useMemo(() => {
+    const query = debouncedSearch.toLowerCase().trim();
+    return academies.filter((academy) => {
+      const matchesSearch = !query || academy.name.toLowerCase().includes(query);
+      const matchesType = !typeFilter || academy.type === typeFilter;
+      const matchesStatus = !statusFilter || academy.status === statusFilter;
+      const matchesScope =
+        filterByBrandId === undefined || academy.brandId === filterByBrandId;
+      return matchesSearch && matchesType && matchesStatus && matchesScope;
+    });
+  }, [academies, debouncedSearch, typeFilter, statusFilter, filterByBrandId]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredAcademies.length / pageSize));
+  const paginatedAcademies = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAcademies.slice(start, start + pageSize);
+  }, [filteredAcademies, currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, typeFilter, statusFilter, filterByBrandId, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const handleOpenAcademy = (id: number) => {
     navigate(`${detailBasePath}/${id}/students`);
   };
 
   const handleEdit = (id: number) => {
+    const academy = academies.find((a) => a.id === id);
+    if (!academy) return;
     setViewing(null);
-    navigate(`/superadmin/academies/${id}/edit`);
+    setEditing(academy);
   };
 
   const handleView = (academy: AcademyListItem) => {
     setViewing(academy);
   };
 
-  const handleDeactivate = (id: number) => {
-    if (!window.confirm("Are you sure you want to deactivate this academy?")) return;
-    setAcademies(updateAcademyStatus(id, "Inactive"));
+  const handleToggleStatus = (academy: AcademyListItem) => {
+    const nextStatus: AcademyStatus = academy.status === "Active" ? "Inactive" : "Active";
+    const label = nextStatus === "Active" ? "activate" : "deactivate";
+    if (!window.confirm(`Are you sure you want to ${label} this academy?`)) return;
+    setAcademies(updateAcademyStatus(academy.id, nextStatus));
     setViewing((prev) =>
-      prev?.id === id ? { ...prev, status: "Inactive" } : prev
-    );
-  };
-
-  const handleApprove = (id: number) => {
-    if (!window.confirm("Approve this academy?")) return;
-    setAcademies(updateAcademyStatus(id, "Active"));
-    setViewing((prev) =>
-      prev?.id === id ? { ...prev, status: "Active" } : prev
+      prev?.id === academy.id ? { ...prev, status: nextStatus } : prev
     );
   };
 
@@ -209,14 +129,6 @@ export default function AcademyList({
       No academies found matching search/filter criteria.
     </div>
   );
-
-  const actionProps = {
-    onEdit: handleEdit,
-    onView: handleView,
-    onDeactivate: handleDeactivate,
-    onApprove: handleApprove,
-    showManageActions: showCreateButton,
-  };
 
   return (
     <div className="w-full min-w-0 max-w-full">
@@ -261,7 +173,6 @@ export default function AcademyList({
               placeholder="Search by academy name..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleFilter()}
               className="w-full h-10 pl-3 pr-9 bg-[var(--bg-input)] border border-[var(--border-soft)] rounded-xl text-sm outline-none text-[var(--text-primary)] placeholder-[var(--text-faint)] focus:border-[var(--accent)] transition"
             />
             <Search
@@ -291,34 +202,23 @@ export default function AcademyList({
             <option value="">All Status</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
-            <option value="Pending">Pending</option>
           </select>
 
-          <div className="flex gap-2 w-full md:w-auto">
-            <button
-              type="button"
-              onClick={handleFilter}
-              className="h-10 flex-1 md:flex-none px-4 text-xs font-semibold rounded-xl bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white transition inline-flex items-center justify-center gap-1.5 shadow-sm touch-manipulation"
-            >
-              <Search size={14} />
-              SEARCH
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="h-10 flex-1 md:flex-none px-3 text-xs font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 text-[var(--text-primary)] transition inline-flex items-center justify-center gap-1 touch-manipulation"
-              title="Reset Filters"
-            >
-              <RotateCcw size={14} />
-              Reset
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="h-10 px-3 text-xs font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 text-[var(--text-primary)] transition inline-flex items-center justify-center gap-1 touch-manipulation"
+            title="Reset Filters"
+          >
+            <RotateCcw size={14} />
+            Reset
+          </button>
         </div>
 
         <div className="lg:hidden">
-          {filteredAcademies.length > 0 ? (
+          {paginatedAcademies.length > 0 ? (
             <ul className="flex flex-col gap-3 sm:gap-4">
-              {filteredAcademies.map((academy) => (
+              {paginatedAcademies.map((academy) => (
                 <li
                   key={academy.id}
                   className="rounded-xl border border-gray-100 bg-gray-50/40 p-3 sm:p-4 cursor-pointer hover:border-[var(--accent)]/30 hover:bg-[var(--accent)]/5 transition"
@@ -359,9 +259,14 @@ export default function AcademyList({
                       </span>
                     </div>
                   </div>
-                  {showCreateButton && (
-                  <div className="mt-3 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                    <ActionButtons academy={academy} showLabels {...actionProps} />
+                  {canManage && (
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end" onClick={(e) => e.stopPropagation()}>
+                    <TableRowActions
+                      onView={() => handleView(academy)}
+                      onEdit={() => handleEdit(academy.id)}
+                      onToggleStatus={() => handleToggleStatus(academy)}
+                      isActive={academy.status === "Active"}
+                    />
                   </div>
                   )}
                 </li>
@@ -383,14 +288,14 @@ export default function AcademyList({
                   <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Type</th>
                   <th className="py-3 px-3 xl:px-4 whitespace-nowrap">No. of Students</th>
                   <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Status</th>
-                  {showCreateButton && (
+                  {canManage && (
                     <th className="py-3 px-3 xl:px-4 text-center whitespace-nowrap">Actions</th>
                   )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
-                {filteredAcademies.length > 0 ? (
-                  filteredAcademies.map((academy) => (
+                {paginatedAcademies.length > 0 ? (
+                  paginatedAcademies.map((academy) => (
                     <tr
                       key={academy.id}
                       className="hover:bg-gray-50/50 transition cursor-pointer"
@@ -426,14 +331,21 @@ export default function AcademyList({
                           {academy.status}
                         </span>
                       </td>
+                      {canManage && (
                       <td className="py-3.5 px-3 xl:px-4" onClick={(e) => e.stopPropagation()}>
-                        {showCreateButton && <ActionButtons academy={academy} {...actionProps} />}
+                        <TableRowActions
+                          onView={() => handleView(academy)}
+                          onEdit={() => handleEdit(academy.id)}
+                          onToggleStatus={() => handleToggleStatus(academy)}
+                          isActive={academy.status === "Active"}
+                        />
                       </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={showCreateButton ? 7 : 6}>{emptyState}</td>
+                    <td colSpan={canManage ? 7 : 6}>{emptyState}</td>
                   </tr>
                 )}
               </tbody>
@@ -441,18 +353,33 @@ export default function AcademyList({
           </div>
         </div>
 
-        <div className="flex items-center justify-center sm:justify-between gap-2 pt-4 sm:pt-6 border-t border-gray-100 mt-4">
-          <span className="text-xs text-gray-400 font-medium text-center sm:text-left">
-            Showing {filteredAcademies.length} of {academies.length} academies
-          </span>
-        </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredAcademies.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
+          label="academies"
+        />
       </div>
 
       {viewing && (
         <AcademyViewModal
           academy={viewing}
           onClose={() => setViewing(null)}
-          onEdit={handleEdit}
+          onEdit={(id) => handleEdit(id)}
+        />
+      )}
+
+      {editing && (
+        <AcademyEditModal
+          academy={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => refresh()}
         />
       )}
     </div>

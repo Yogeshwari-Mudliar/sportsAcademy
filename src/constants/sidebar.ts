@@ -6,6 +6,7 @@ import {
   Building2,
   Users,
   GraduationCap,
+  Layers,
   CreditCard,
   Trophy,
   BadgeDollarSign,
@@ -59,6 +60,7 @@ export const MANAGEMENT_SIDEBAR: SidebarGroup[] = [
       },
       { label: "Coaches", segment: "coaches", icon: Users, permission: "coaches" },
       { label: "Students", segment: "students", icon: GraduationCap, permission: "students" },
+      { label: "Batches", segment: "batches", icon: Layers, permission: "batches" },
       {
         label: "Manage Users",
         segment: "ManageUsers",
@@ -101,6 +103,7 @@ export const COACH_SIDEBAR: SidebarGroup[] = [
     title: "Main",
     items: [
       { label: "Dashboard", segment: "dashboard", icon: LayoutDashboard, permission: "dashboard" },
+      { label: "Batches", segment: "batches", icon: Layers, permission: "batches" },
       { label: "Change Email", segment: "change-email", icon: ShieldCheck },
       { label: "Change Password", segment: "change-password", icon: KeyRound },
     ],
