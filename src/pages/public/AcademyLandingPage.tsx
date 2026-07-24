@@ -10,6 +10,8 @@ import LandingRules from "@/components/landing/LandingRules";
 import LandingGallery from "@/components/landing/LandingGallery";
 import LandingFAQ from "@/components/landing/LandingFAQ";
 import StudentRegistrationForm from "@/components/landing/StudentRegistrationForm";
+import LandingCursor from "@/components/landing/LandingCursor";
+import LandingScrollEffects from "@/components/landing/LandingScrollEffects";
 
 export default function AcademyLandingPage() {
   const { academyId } = useParams();
@@ -26,8 +28,7 @@ export default function AcademyLandingPage() {
       setLoading(false);
       return;
     }
-    const website = getPublicAcademyWebsite(id);
-    setData(website);
+    setData(getPublicAcademyWebsite(id));
     setLoading(false);
   }, [id]);
 
@@ -40,10 +41,10 @@ export default function AcademyLandingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="landing-shell min-h-screen flex items-center justify-center bg-[#F5F3FF]">
         <div className="text-center">
-          <div className="h-12 w-12 mx-auto mb-4 rounded-full border-4 border-slate-200 border-t-orange-500 animate-spin" />
-          <p className="text-slate-600">Loading academy website...</p>
+          <div className="h-12 w-12 mx-auto mb-4 rounded-full border-2 border-violet-200 border-t-violet-600 animate-spin" />
+          <p className="text-slate-500 text-sm font-medium tracking-wide">Loading</p>
         </div>
       </div>
     );
@@ -51,9 +52,9 @@ export default function AcademyLandingPage() {
 
   if (!data || !academy) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F3FF] px-4">
         <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Website not available</h1>
+          <h1 className="landing-display text-2xl font-bold text-slate-900 mb-2">Website not available</h1>
           <p className="text-slate-600 text-sm">
             This academy registration page is inactive or does not exist. Please contact the academy.
           </p>
@@ -63,12 +64,14 @@ export default function AcademyLandingPage() {
   }
 
   const themeStyle = {
-    "--landing-primary": data.primaryColor || "#0f172a",
-    "--landing-accent": data.accentColor || "#ff6b00",
+    "--landing-primary": data.primaryColor || "#312E81",
+    "--landing-accent": data.accentColor || "#7C3AED",
   } as React.CSSProperties;
 
   return (
-    <div className="min-h-screen bg-white" style={themeStyle}>
+    <div className="landing-shell min-h-screen bg-[#F7F8FC] text-slate-900" style={themeStyle}>
+      <LandingCursor />
+      <LandingScrollEffects />
       <LandingHeader data={data} />
       <main>
         <LandingSlider data={data} />

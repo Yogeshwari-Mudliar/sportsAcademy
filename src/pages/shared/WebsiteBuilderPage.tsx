@@ -26,6 +26,7 @@ import {
   type AcademyWebsiteContent,
   type WebsiteSocialAccount,
 } from "@/data/academyWebsite";
+import WebsiteImageField from "@/components/website/WebsiteImageField";
 
 type StepId =
   | "basic"
@@ -241,13 +242,22 @@ export default function WebsiteBuilderPage() {
                   className={`${inputClass} h-auto py-2`}
                 />
               </Field>
-              <Field label="Logo URL">
-                <input
-                  value={form.logo}
-                  onChange={(e) => update("logo", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
+              <WebsiteImageField
+                label="Logo"
+                recommendedSize="200 × 200 px (square)"
+                maxMb={1}
+                hint="Upload academy logo (or paste URL below)."
+                value={form.logo}
+                onChange={(url) => update("logo", url)}
+              />
+              <WebsiteImageField
+                label="Banner Watermark Image"
+                recommendedSize="800 × 800 px (PNG with transparent background preferred)"
+                maxMb={2}
+                hint="Optional soft watermark shown on the hero banner image only."
+                value={form.heroWatermark || ""}
+                onChange={(url) => update("heroWatermark", url)}
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Primary Color">
                   <input
@@ -423,15 +433,17 @@ export default function WebsiteBuilderPage() {
             >
               {form.sliderImages.map((slide, idx) => (
                 <div key={slide.id} className="rounded-xl border p-3 space-y-2">
-                  <input
+                  <WebsiteImageField
+                    label={`Slide ${idx + 1} image`}
+                    recommendedSize="1600 × 1000 px (landscape)"
+                    maxMb={2.5}
+                    hint="Hero banner photo for this slide."
                     value={slide.imageUrl}
-                    onChange={(e) => {
+                    onChange={(url) => {
                       const next = [...form.sliderImages];
-                      next[idx] = { ...slide, imageUrl: e.target.value };
+                      next[idx] = { ...slide, imageUrl: url };
                       update("sliderImages", next);
                     }}
-                    placeholder="Image URL"
-                    className={inputClass}
                   />
                   <input
                     value={slide.title ?? ""}
@@ -463,7 +475,7 @@ export default function WebsiteBuilderPage() {
                       )
                     }
                   >
-                    Remove
+                    Remove slide
                   </button>
                 </div>
               ))}

@@ -9,16 +9,16 @@ interface LandingFooterProps {
 
 export default function LandingFooter({ data, academy }: LandingFooterProps) {
   return (
-    <footer className="bg-slate-950 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+    <footer className="bg-[var(--landing-primary)] text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
           <div className="flex items-center gap-3 mb-4">
             {data.logo && (
-              <img src={data.logo} alt="" className="h-12 w-12 rounded-xl object-cover border border-white/20" />
+              <img src={data.logo} alt="" className="h-12 w-12 rounded-2xl object-cover border border-white/20" />
             )}
             <div>
-              <p className="font-bold text-lg">{data.academyName}</p>
-              <p className="text-xs text-white/50">Student Registration Portal</p>
+              <p className="landing-display font-bold text-lg">{data.academyName}</p>
+              <p className="text-xs text-white/55">Student Registration Portal</p>
             </div>
           </div>
           <p className="text-sm text-white/70 leading-relaxed">{data.description}</p>

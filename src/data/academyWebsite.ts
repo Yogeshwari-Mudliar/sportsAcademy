@@ -65,6 +65,8 @@ export interface AcademyWebsiteContent {
   metaDescription: string;
   primaryColor: string;
   accentColor: string;
+  /** Soft watermark overlay on hero banner (URL or data-URL) */
+  heroWatermark: string;
   updatedAt: string;
 }
 
@@ -209,8 +211,9 @@ export function createDefaultWebsite(academy: AcademyListItem): AcademyWebsiteCo
     isActive: true,
     metaTitle: `${academy.name} | Student Registration`,
     metaDescription: academy.about || `Register as a student at ${academy.name}.`,
-    primaryColor: "#0f172a",
-    accentColor: "#ff6b00",
+    primaryColor: "#312E81",
+    accentColor: "#7C3AED",
+    heroWatermark: "",
     updatedAt: new Date().toISOString(),
   };
 }
@@ -239,6 +242,9 @@ export function getAcademyWebsite(academyId: number): AcademyWebsiteContent | nu
       ...stored,
       showRegistrationForm: stored.showRegistrationForm !== false,
       isActive: stored.isActive !== false,
+      heroWatermark: stored.heroWatermark || "",
+      primaryColor: stored.primaryColor || "#312E81",
+      accentColor: stored.accentColor || "#7C3AED",
     };
   }
   if (!academy) return null;

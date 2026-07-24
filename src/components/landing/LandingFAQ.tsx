@@ -12,30 +12,28 @@ export default function LandingFAQ({ data }: LandingFAQProps) {
   if (!faqs.length) return null;
 
   return (
-    <section id="faq" className="py-14 md:py-20 bg-slate-50">
+    <section id="faq" className="py-20 md:py-28 bg-[#F5F3FF]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-10">
+        <div className="text-center mb-12" data-reveal>
           <span
-            className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider"
-            style={{
-              background: "color-mix(in srgb, var(--landing-accent) 12%, white)",
-              color: "var(--landing-accent)",
-            }}
+            className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider bg-white text-[var(--landing-accent)] shadow-sm"
           >
             <MessageCircle size={13} /> Need Help?
           </span>
-          <h2 className="mt-3 text-3xl md:text-4xl font-black text-slate-900">
+          <h2 className="landing-display mt-4 text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
             Frequently Asked Questions
           </h2>
+          <div data-line className="mx-auto mt-6 h-1 w-16 rounded-full bg-[var(--landing-accent)] origin-left" />
         </div>
-        <div className="space-y-3">
+        <div className="space-y-3" data-reveal-stagger>
           {faqs.map((faq, index) => {
             const open = openIndex === index;
             return (
               <article
                 key={faq.id}
-                className={`rounded-2xl border bg-white overflow-hidden transition ${
-                  open ? "border-orange-200 shadow-md" : "border-slate-200"
+                data-reveal-child
+                className={`rounded-3xl border overflow-hidden bg-white transition ${
+                  open ? "border-violet-200 shadow-md shadow-violet-100" : "border-violet-100"
                 }`}
               >
                 <button
@@ -43,19 +41,23 @@ export default function LandingFAQ({ data }: LandingFAQProps) {
                   onClick={() => setOpenIndex(open ? null : index)}
                   className="w-full flex items-center justify-between gap-3 px-4 py-4 text-left"
                 >
-                  <span className="font-semibold text-slate-900 text-sm md:text-base">
-                    {faq.question}
-                  </span>
+                  <span className="font-semibold text-sm md:text-base text-slate-900">{faq.question}</span>
                   <ChevronDown
                     size={18}
-                    className={`shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`}
+                    className={`shrink-0 text-slate-400 transition duration-300 ${open ? "rotate-180" : ""}`}
                   />
                 </button>
-                {open && (
-                  <div className="px-4 pb-4 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
-                    {faq.answer}
+                <div
+                  className={`grid transition-all duration-300 ease-out ${
+                    open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-4 pb-4 text-sm text-slate-600 leading-relaxed border-t border-violet-50 pt-3">
+                      {faq.answer}
+                    </div>
                   </div>
-                )}
+                </div>
               </article>
             );
           })}

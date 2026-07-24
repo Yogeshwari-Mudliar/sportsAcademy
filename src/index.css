@@ -1,2 +1,103 @@
 @import "tailwindcss";
 
+/* Habitline-inspired landing typography + soft theme */
+.landing-shell {
+  font-family: "Manrope", system-ui, sans-serif;
+  color: #0f172a;
+}
+.landing-display,
+.landing-shell h1,
+.landing-shell h2,
+.landing-shell h3 {
+  font-family: "Outfit", "Manrope", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.landing-cursor-on,
+.landing-cursor-on body {
+  cursor: none;
+}
+.landing-cursor-on a,
+.landing-cursor-on button,
+.landing-cursor-on [data-magnetic] {
+  cursor: none;
+}
+
+.landing-cursor-dot,
+.landing-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+.landing-cursor-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--landing-accent, #7c3aed);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--landing-accent, #7c3aed) 55%, transparent);
+}
+.landing-cursor-ring {
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid color-mix(in srgb, var(--landing-accent, #7c3aed) 65%, white);
+  opacity: 0.55;
+}
+
+.landing-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 120;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--landing-accent, #7c3aed), #c4b5fd);
+  pointer-events: none;
+}
+
+.landing-form-dark select option {
+  color: #0f172a;
+  background: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-cursor-on,
+  .landing-cursor-on body,
+  .landing-cursor-on a,
+  .landing-cursor-on button {
+    cursor: auto;
+  }
+  .landing-cursor-dot,
+  .landing-cursor-ring {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .stat-card {
+    transition: transform 0.35s var(--motion-ease), box-shadow 0.35s var(--motion-ease);
+  }
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+  }
+  .sidebar-link:hover,
+  .sidebar-sublink:hover {
+    transform: translateX(3px);
+  }
+  .sidebar-link,
+  .sidebar-sublink,
+  .sidebar-caret {
+    transition: transform 0.25s var(--motion-ease), background-color 0.25s ease;
+  }
+  button:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}

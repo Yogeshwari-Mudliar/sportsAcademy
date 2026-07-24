@@ -8,7 +8,7 @@ const inputClass =
   "mt-1 w-full h-10 sm:h-11 px-3 rounded-xl border border-[var(--border-soft)] bg-[var(--bg-input)] text-sm outline-none focus:border-[var(--accent)]";
 
 const landingInputClass =
-  "mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-[var(--landing-accent)]";
+  "mt-1 w-full h-11 px-3 rounded-2xl border border-violet-100 bg-white text-slate-800 placeholder:text-slate-400 text-sm outline-none focus:border-[var(--landing-accent)] shadow-sm";
 
 interface StudentAdmissionFieldsProps {
   /** Prefill values (edit mode) */
