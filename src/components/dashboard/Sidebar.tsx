@@ -17,7 +17,17 @@ import { PERMISSIONS_UPDATED_EVENT, hasPermission } from "../../data/permissions
 import { useAppBase } from "../../hooks/useAppBase";
 import "../../styles/common/sidebar.css";
 
-function SidebarLink({ item, basePath }: { item: SidebarItem; basePath: string }) {
+function SidebarLink({
+  item,
+  basePath,
+  openSegment,
+  onToggle,
+}: {
+  item: SidebarItem;
+  basePath: string;
+  openSegment: string | null;
+  onToggle: (segment: string) => void;
+}) {
   const location = useLocation();
   const Icon = item.icon;
   const itemPath = resolveSidebarPath(basePath, item.segment);
@@ -27,7 +37,7 @@ function SidebarLink({ item, basePath }: { item: SidebarItem; basePath: string }
     return location.pathname === childPath || location.pathname.startsWith(`${childPath}/`);
   });
 
-  const [open, setOpen] = useState<boolean>(Boolean(childActive));
+  const open = openSegment === item.segment;
 
   if (item.children && item.children.length > 0) {
     return (
@@ -35,7 +45,7 @@ function SidebarLink({ item, basePath }: { item: SidebarItem; basePath: string }
         <button
           type="button"
           className={`sidebar-link ${childActive ? "active" : ""}`}
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => onToggle(item.segment)}
         >
           <Icon size={18} className="sidebar-icon" />
           <span>{item.label}</span>
@@ -77,7 +87,9 @@ function SidebarLink({ item, basePath }: { item: SidebarItem; basePath: string }
 
 export default function Sidebar() {
   const collapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
+  const location = useLocation();
   const [permissionsVersion, setPermissionsVersion] = useState(0);
+  const [openSegment, setOpenSegment] = useState<string | null>(null);
   const user = getCurrentUser();
   const role = user?.role ?? ROLES.student;
   const basePath = useAppBase();
@@ -108,11 +120,38 @@ export default function Sidebar() {
     [baseSidebarGroups, permissionsVersion, role]
   );
 
+  // Auto-open the dropdown that matches current route (and close others)
+  useEffect(() => {
+    let active: string | null = null;
+    for (const group of sidebarGroups) {
+      for (const item of group.items) {
+        if (!item.children?.length) continue;
+        const match = item.children.some((c) => {
+          const childPath = resolveSidebarPath(basePath, c.segment);
+          return (
+            location.pathname === childPath ||
+            location.pathname.startsWith(`${childPath}/`)
+          );
+        });
+        if (match) {
+          active = item.segment;
+          break;
+        }
+      }
+      if (active) break;
+    }
+    setOpenSegment(active);
+  }, [location.pathname, sidebarGroups, basePath]);
+
   useEffect(() => {
     const refresh = () => setPermissionsVersion((value) => value + 1);
     window.addEventListener(PERMISSIONS_UPDATED_EVENT, refresh);
     return () => window.removeEventListener(PERMISSIONS_UPDATED_EVENT, refresh);
   }, []);
+
+  const handleToggle = (segment: string) => {
+    setOpenSegment((prev) => (prev === segment ? null : segment));
+  };
 
   return (
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
@@ -145,7 +184,13 @@ export default function Sidebar() {
           <div key={group.title} className="sidebar-section">
             <p className="sidebar-section-title">{group.title}</p>
             {group.items.map((item) => (
-              <SidebarLink key={item.segment} item={item} basePath={basePath} />
+              <SidebarLink
+                key={item.segment}
+                item={item}
+                basePath={basePath}
+                openSegment={openSegment}
+                onToggle={handleToggle}
+              />
             ))}
           </div>
         ))}

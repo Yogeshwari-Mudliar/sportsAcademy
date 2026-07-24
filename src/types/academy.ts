@@ -21,7 +21,7 @@ export interface AcademyFormData {
   youtube: string;
 }
 
-export type AcademyStatus = "Active" | "Inactive" | "Pending";
+export type AcademyStatus = "Active" | "Inactive";
 
 export interface AcademyListItem {
   id: number;

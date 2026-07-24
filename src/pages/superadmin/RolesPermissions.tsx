@@ -12,7 +12,7 @@ import {
 } from "../../data/permissions";
 import "../../styles/superadmin/rolesPermissions.css";
 
-const EDITABLE_ROLES: Role[] = [ROLES.admin, ROLES.student];
+const EDITABLE_ROLES: Role[] = [ROLES.admin, ROLES.coach, ROLES.student];
 
 export default function RolesPermissions() {
   const dispatch = useAppDispatch();

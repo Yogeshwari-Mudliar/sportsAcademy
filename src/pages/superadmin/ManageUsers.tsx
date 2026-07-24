@@ -1,19 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAppDispatch } from "../../app/hooks";
 import { setPageHeader } from "../../features/ui/uiSlice";
 import { 
   Search, 
-  Download, 
-  Plus, 
-  Filter, 
   RotateCcw, 
-  Edit3, 
-  Trash2, 
   MapPin, 
-  Calendar, 
-  ChevronLeft, 
-  ChevronRight 
+  Calendar
 } from "lucide-react";
+import TableRowActions from "@/components/table/TableRowActions";
+import TableAddButton from "@/components/table/TableAddButton";
+import TablePagination from "@/components/table/TablePagination";
+import TableImportExport from "@/components/table/TableImportExport";
+import StatusDot from "@/components/table/StatusDot";
+import { useCanManageTables } from "@/hooks/useCanManageTables";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { downloadCsv, parseCsv, readFileAsText, toCsv } from "@/utils/csv";
 
 interface UserItem {
   id: number;
@@ -23,7 +24,7 @@ interface UserItem {
   academy: string;
   location: string;
   phone: string;
-  status: "Active" | "Inactive" | "Pending";
+  status: "Active" | "Inactive";
   joinedOn: string;
   avatar: string;
 }
@@ -85,7 +86,7 @@ const INITIAL_USERS: UserItem[] = [
     academy: "Chennai Super Kings Acad.",
     location: "Chennai, TN",
     phone: "+91 91234 87654",
-    status: "Pending",
+    status: "Inactive",
     joinedOn: "26 Jun, 2026",
     avatar: "https://i.pravatar.cc/100?img=49"
   },
@@ -103,20 +104,38 @@ const INITIAL_USERS: UserItem[] = [
   }
 ];
 
+const STORAGE_KEY = "manage_users";
+
 export default function ManageUsers() {
   const dispatch = useAppDispatch();
+  const canManage = useCanManageTables();
   
-  const [users, setUsers] = useState<UserItem[]>(INITIAL_USERS);
+  const [users, setUsers] = useState<UserItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Array<UserItem & { status: string }>;
+        return parsed.map((u) => ({
+          ...u,
+          status: (u.status === "Active" ? "Active" : "Inactive") as UserItem["status"],
+        }));
+      }
+    } catch {
+      /* use defaults */
+    }
+    return INITIAL_USERS;
+  });
+  const [viewing, setViewing] = useState<UserItem | null>(null);
+  const [editing, setEditing] = useState<UserItem | null>(null);
+  const [adding, setAdding] = useState(false);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [academyFilter, setAcademyFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
-  
-  const [activeRole, setActiveRole] = useState("");
-  const [activeStatus, setActiveStatus] = useState("");
-  const [activeAcademy, setActiveAcademy] = useState("");
-  const [activeSearch, setActiveSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     dispatch(
@@ -127,11 +146,9 @@ export default function ManageUsers() {
     );
   }, [dispatch]);
 
-  const handleFilter = () => {
-    setActiveSearch(search);
-    setActiveRole(roleFilter);
-    setActiveStatus(statusFilter);
-    setActiveAcademy(academyFilter);
+  const persistUsers = (next: UserItem[]) => {
+    setUsers(next);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   };
 
   const handleReset = () => {
@@ -140,37 +157,123 @@ export default function ManageUsers() {
     setStatusFilter("");
     setAcademyFilter("");
     setDateFilter("");
-    
-    setActiveSearch("");
-    setActiveRole("");
-    setActiveStatus("");
-    setActiveAcademy("");
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch = 
-      !activeSearch ||
-      user.name.toLowerCase().includes(activeSearch.toLowerCase()) ||
-      user.email.toLowerCase().includes(activeSearch.toLowerCase()) ||
-      user.phone.includes(activeSearch);
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) => {
+      const query = debouncedSearch.toLowerCase().trim();
+      const matchesSearch =
+        !query ||
+        user.name.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query) ||
+        user.phone.includes(query);
 
-    const matchesRole = !activeRole || user.role === activeRole;
-    const matchesStatus = !activeStatus || user.status === activeStatus;
-    const matchesAcademy = !activeAcademy || user.academy === activeAcademy;
+      const matchesRole = !roleFilter || user.role === roleFilter;
+      const matchesStatus = !statusFilter || user.status === statusFilter;
+      const matchesAcademy = !academyFilter || user.academy === academyFilter;
 
-    return matchesSearch && matchesRole && matchesStatus && matchesAcademy;
-  });
+      return matchesSearch && matchesRole && matchesStatus && matchesAcademy;
+    });
+  }, [users, debouncedSearch, roleFilter, statusFilter, academyFilter]);
 
-  const handleDelete = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      setUsers(users.filter(u => u.id !== id));
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / pageSize));
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredUsers.slice(start, start + pageSize);
+  }, [filteredUsers, currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, roleFilter, statusFilter, academyFilter, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const handleToggleStatus = (user: UserItem) => {
+    const nextStatus = user.status === "Active" ? "Inactive" : "Active";
+    const label = nextStatus === "Active" ? "activate" : "deactivate";
+    if (!window.confirm(`Are you sure you want to ${label} this user?`)) return;
+    persistUsers(
+      users.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u))
+    );
+    setViewing((v) => (v?.id === user.id ? { ...v, status: nextStatus } : v));
+  };
+
+  const handleSaveUser = (user: UserItem) => {
+    const exists = users.some((u) => u.id === user.id);
+    const next = exists
+      ? users.map((u) => (u.id === user.id ? { ...u, ...user } : u))
+      : [user, ...users];
+    persistUsers(next);
+    setEditing(null);
+    setAdding(false);
+  };
+
+  const handleExport = () => {
+    const headers = ["name", "email", "phone", "role", "academy", "location", "status", "joinedOn"];
+    downloadCsv(
+      "users-export.csv",
+      toCsv(
+        headers,
+        filteredUsers.map((u) => ({
+          name: u.name,
+          email: u.email,
+          phone: u.phone,
+          role: u.role,
+          academy: u.academy,
+          location: u.location,
+          status: u.status,
+          joinedOn: u.joinedOn,
+        }))
+      )
+    );
+  };
+
+  const handleImport = async (file: File) => {
+    const text = await readFileAsText(file);
+    const { rows } = parseCsv(text);
+    const nextIdBase = users.reduce((max, u) => Math.max(max, u.id), 0);
+    const imported: UserItem[] = [];
+    rows.forEach((row, index) => {
+      const name = (row.name || "").trim();
+      const email = (row.email || "").trim();
+      if (!name || !email) return;
+      const roleRaw = (row.role || "Student").trim();
+      const role: UserItem["role"] =
+        roleRaw === "Admin" || roleRaw === "Coach" ? roleRaw : "Student";
+      const statusRaw = (row.status || "Active").trim();
+      imported.push({
+        id: nextIdBase + index + 1,
+        name,
+        email,
+        phone: (row.phone || "").trim(),
+        role,
+        academy: (row.academy || "").trim() || "—",
+        location: (row.location || "").trim() || "—",
+        status: statusRaw.toLowerCase() === "inactive" ? "Inactive" : "Active",
+        joinedOn:
+          (row.joinedon || row.joinedOn || "").trim() ||
+          new Date().toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }),
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1a56db&color=fff`,
+      });
+    });
+    if (!imported.length) {
+      window.alert("CSV must include name and email columns.");
+      return;
     }
+    persistUsers([...imported, ...users]);
+    window.alert(`Imported ${imported.length} users.`);
   };
 
   return (
     <div className="space-y-6">
       {/* Table Container Card */}
-      <div className="bg-white rounded-2xl border border-[var(--border-soft)] shadow-sm overflow-hidden p-6">
+      <div className="bg-white rounded-2xl border border-[var(--border-soft)] shadow-sm overflow-hidden p-4 sm:p-6">
         
         {/* Card Header Title and Actions */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100">
@@ -178,15 +281,13 @@ export default function ManageUsers() {
             <h2 className="text-xl font-bold text-[var(--text-primary)]">All Users</h2>
             <p className="text-xs text-[var(--text-muted)] mt-1">Manage and monitor all users across the platform.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="h-10 px-4 text-xs font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 text-[var(--text-primary)] transition flex items-center gap-2">
-              <Download size={15} />
-              Export
-            </button>
-            <button className="h-10 px-4 text-xs font-semibold rounded-xl bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white transition flex items-center gap-2 shadow-sm">
-              <Plus size={16} />
-              Add User
-            </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <TableImportExport
+              show={canManage}
+              onExport={handleExport}
+              onImportFile={handleImport}
+            />
+            <TableAddButton label="Add User" show={canManage} onClick={() => setAdding(true)} />
           </div>
         </div>
 
@@ -226,7 +327,6 @@ export default function ManageUsers() {
             <option value="">All Status</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
-            <option value="Pending">Pending</option>
           </select>
 
           {/* Academy */}
@@ -259,13 +359,6 @@ export default function ManageUsers() {
           {/* Action Buttons */}
           <div className="flex gap-2 w-full lg:w-auto">
             <button
-              onClick={handleFilter}
-              className="h-10 flex-1 px-4 text-xs font-semibold rounded-xl bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white transition flex items-center justify-center gap-1.5 shadow-sm"
-            >
-              <Filter size={14} />
-              Filter
-            </button>
-            <button
               onClick={handleReset}
               className="h-10 px-3 text-xs font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 text-[var(--text-primary)] transition flex items-center justify-center gap-1"
               title="Reset Filters"
@@ -277,38 +370,41 @@ export default function ManageUsers() {
         </div>
 
         {/* Users Table */}
-        <div className="overflow-x-auto -mx-6">
-          <div className="inline-block min-w-full align-middle px-6">
-            <table className="min-w-full border-collapse">
+        <div className="w-full overflow-hidden -mx-6 px-6">
+            <table className="w-full table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
-                  <th className="py-3 px-4 w-12 text-center">#</th>
-                  <th className="py-3 px-4">User</th>
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Academy</th>
-                  <th className="py-3 px-4">Email</th>
-                  <th className="py-3 px-4">Phone</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Joined On</th>
-                  <th className="py-3 px-4 text-center">Actions</th>
+                  <th className="py-3 px-2 w-[5%] text-center">#</th>
+                  <th className="py-3 px-2 w-[18%]">User</th>
+                  <th className="py-3 px-2 w-[10%]">Role</th>
+                  <th className="py-3 px-2 w-[18%]">Academy</th>
+                  <th className="py-3 px-2 w-[18%]">Email</th>
+                  <th className="py-3 px-2 w-[12%]">Phone</th>
+                  <th className="py-3 px-2 w-[10%]">Joined On</th>
+                  {canManage && <th className="py-3 px-2 w-[7%] text-center">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((user, idx) => (
+                {paginatedUsers.length > 0 ? (
+                  paginatedUsers.map((user, idx) => (
                     <tr key={user.id} className="hover:bg-gray-50/50 transition">
-                      <td className="py-3.5 px-4 text-center text-gray-400 font-semibold">{idx + 1}</td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover border border-gray-200" />
-                          <div>
-                            <p className="font-semibold text-[var(--text-primary)]">{user.name}</p>
-                            <p className="text-xs text-[var(--text-faint)]">{user.email}</p>
+                      <td className="py-3.5 px-2 text-center text-gray-400 font-semibold">
+                        {(currentPage - 1) * pageSize + idx + 1}
+                      </td>
+                      <td className="py-3.5 px-2 overflow-hidden">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5 min-w-0">
+                              <span className="truncate" title={user.name}>{user.name}</span>
+                              <StatusDot status={user.status} className="shrink-0" />
+                            </p>
+                            <p className="text-xs text-[var(--text-faint)] truncate" title={user.email}>{user.email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      <td className="py-3.5 px-2 overflow-hidden">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-block max-w-full truncate ${
                           user.role === "Admin" ? "bg-purple-50 text-purple-600 border border-purple-100" :
                           user.role === "Coach" ? "bg-blue-50 text-blue-600 border border-blue-100" :
                           "bg-green-50 text-green-600 border border-green-100"
@@ -316,72 +412,159 @@ export default function ManageUsers() {
                           {user.role}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div>
-                          <p className="font-medium text-[var(--text-primary)]">{user.academy}</p>
-                          <p className="text-xs text-gray-400 flex items-center gap-0.5 mt-0.5">
-                            <MapPin size={11} /> {user.location}
+                      <td className="py-3.5 px-2 overflow-hidden">
+                        <div className="min-w-0">
+                          <p className="font-medium text-[var(--text-primary)] truncate" title={user.academy}>{user.academy}</p>
+                          <p className="text-xs text-gray-400 flex items-center gap-0.5 mt-0.5 min-w-0">
+                            <MapPin size={11} className="shrink-0" />
+                            <span className="truncate">{user.location}</span>
                           </p>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-gray-600 font-medium">{user.email}</td>
-                      <td className="py-3.5 px-4 text-gray-600 font-medium">{user.phone}</td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          user.status === "Active" ? "bg-green-50 text-green-600 border border-green-100" :
-                          user.status === "Inactive" ? "bg-red-50 text-red-500 border border-red-100" :
-                          "bg-orange-50 text-orange-600 border border-orange-100"
-                        }`}>
-                          {user.status}
-                        </span>
+                      <td className="py-3.5 px-2 text-gray-600 font-medium overflow-hidden">
+                        <span className="block truncate" title={user.email}>{user.email}</span>
                       </td>
-                      <td className="py-3.5 px-4 text-gray-500">{user.joinedOn}</td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <button className="p-1.5 rounded-lg border border-blue-100 text-blue-600 hover:bg-blue-50 transition" aria-label="Edit user">
-                            <Edit3 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(user.id)}
-                            className="p-1.5 rounded-lg border border-red-100 text-red-500 hover:bg-red-50 transition"
-                            aria-label="Delete user"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                      <td className="py-3.5 px-2 text-gray-600 font-medium overflow-hidden">
+                        <span className="block truncate" title={user.phone}>{user.phone}</span>
                       </td>
+                      <td className="py-3.5 px-2 text-gray-500 overflow-hidden">
+                        <span className="block truncate">{user.joinedOn}</span>
+                      </td>
+                      {canManage && (
+                      <td className="py-3.5 px-2 text-center">
+                        <TableRowActions
+                          onView={() => setViewing(user)}
+                          onEdit={() => setEditing(user)}
+                          onToggleStatus={() => handleToggleStatus(user)}
+                          isActive={user.status === "Active"}
+                        />
+                      </td>
+                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-gray-400 font-medium">
+                    <td colSpan={canManage ? 8 : 7} className="py-12 text-center text-gray-400 font-medium">
                       No users found matching search/filter criteria.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
-          </div>
         </div>
 
-        {/* Pagination Footer */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-100 mt-4">
-          <span className="text-xs text-gray-400 font-medium">Showing 1 to {filteredUsers.length} of 128 results</span>
-          <div className="flex items-center gap-1.5">
-            <button className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 transition" aria-label="Previous page">
-              <ChevronLeft size={16} />
-            </button>
-            <button className="w-8 h-8 rounded-lg bg-[var(--accent)] text-white text-xs font-semibold flex items-center justify-center">1</button>
-            <button className="w-8 h-8 rounded-lg hover:bg-gray-50 text-gray-600 text-xs font-semibold flex items-center justify-center">2</button>
-            <button className="w-8 h-8 rounded-lg hover:bg-gray-50 text-gray-600 text-xs font-semibold flex items-center justify-center">3</button>
-            <span className="text-gray-400 px-1 font-semibold text-xs">...</span>
-            <button className="w-8 h-8 rounded-lg hover:bg-gray-50 text-gray-600 text-xs font-semibold flex items-center justify-center">21</button>
-            <button className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 transition" aria-label="Next page">
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredUsers.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
+          label="users"
+        />
 
+      </div>
+
+      {(viewing || editing || adding) && (
+        <UserCrudModal
+          mode={adding ? "add" : editing ? "edit" : "view"}
+          user={viewing ?? editing ?? undefined}
+          onClose={() => {
+            setViewing(null);
+            setEditing(null);
+            setAdding(false);
+          }}
+          onSave={handleSaveUser}
+          onEdit={() => {
+            if (viewing) {
+              setEditing(viewing);
+              setViewing(null);
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function UserCrudModal({
+  mode,
+  user,
+  onClose,
+  onSave,
+  onEdit,
+}: {
+  mode: "view" | "edit" | "add";
+  user?: UserItem;
+  onClose: () => void;
+  onSave: (user: UserItem) => void;
+  onEdit: () => void;
+}) {
+  const isView = mode === "view";
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    onSave({
+      ...(user ?? {}),
+      id: user?.id ?? Date.now(),
+      name: String(fd.get("name")),
+      email: String(fd.get("email")),
+      role: String(fd.get("role")) as UserItem["role"],
+      academy: String(fd.get("academy")),
+      location: String(fd.get("location")),
+      phone: String(fd.get("phone")),
+      status: String(fd.get("status")) as UserItem["status"],
+      joinedOn: user?.joinedOn ?? new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+      avatar: user?.avatar ?? `https://i.pravatar.cc/100?img=${Math.floor(Math.random() * 70)}`,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button type="button" className="absolute inset-0 bg-black/40" onClick={onClose} aria-label="Close" />
+      <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <h3 className="text-lg font-bold mb-4">
+          {mode === "add" ? "Add User" : mode === "edit" ? "Edit User" : "View User"}
+        </h3>
+        {isView && user ? (
+          <div className="space-y-2 text-sm">
+            <p><strong>Name:</strong> {user.name}</p>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Role:</strong> {user.role}</p>
+            <p><strong>Academy:</strong> {user.academy}</p>
+            <p><strong>Phone:</strong> {user.phone}</p>
+            <p><strong>Status:</strong> {user.status}</p>
+            <div className="flex justify-end gap-2 pt-4">
+              <button type="button" className="px-4 py-2 border rounded-lg" onClick={onClose}>Close</button>
+              <button type="button" className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg" onClick={onEdit}>Edit</button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <input name="name" defaultValue={user?.name} placeholder="Name" required className="w-full h-10 px-3 border rounded-xl" />
+            <input name="email" type="email" defaultValue={user?.email} placeholder="Email" required className="w-full h-10 px-3 border rounded-xl" />
+            <select name="role" defaultValue={user?.role ?? "Student"} className="w-full h-10 px-3 border rounded-xl">
+              <option value="Admin">Admin</option>
+              <option value="Coach">Coach</option>
+              <option value="Student">Student</option>
+            </select>
+            <input name="academy" defaultValue={user?.academy} placeholder="Academy" className="w-full h-10 px-3 border rounded-xl" />
+            <input name="location" defaultValue={user?.location} placeholder="Location" className="w-full h-10 px-3 border rounded-xl" />
+            <input name="phone" defaultValue={user?.phone} placeholder="Phone" className="w-full h-10 px-3 border rounded-xl" />
+            <select name="status" defaultValue={user?.status ?? "Active"} className="w-full h-10 px-3 border rounded-xl">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" className="px-4 py-2 border rounded-lg" onClick={onClose}>Cancel</button>
+              <button type="submit" className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg">Save</button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

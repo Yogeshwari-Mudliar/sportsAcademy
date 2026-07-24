@@ -11,6 +11,9 @@ export type PermissionKey =
   | "changePassword"
   | "students"
   | "coaches"
+  | "batches"
+  | "websiteBuilder"
+  | "tournaments"
   | "settings"
   | "rolesPermissions";
 
@@ -75,6 +78,21 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     description: "Coach pages and coach records.",
   },
   {
+    key: "batches",
+    label: "Batches",
+    description: "Training batches and batch schedules.",
+  },
+  {
+    key: "websiteBuilder",
+    label: "Website Builder",
+    description: "Create and edit student registration landing website.",
+  },
+  {
+    key: "tournaments",
+    label: "Tournaments",
+    description: "Create and manage academy tournaments and match events.",
+  },
+  {
     key: "settings",
     label: "Settings",
     description: "Dashboard settings and appearance.",
@@ -90,8 +108,20 @@ const ALL_PERMISSIONS = PERMISSION_MODULES.map((module) => module.key);
 
 const DEFAULT_ROLE_PERMISSIONS: Record<Role, PermissionKey[]> = {
   [ROLES.superadmin]: ALL_PERMISSIONS,
-  [ROLES.admin]: ["dashboard", "academies", "createLocation", "students", "coaches", "settings", "changeEmail", "changePassword"],
-  [ROLES.coach]: ["dashboard", "changeEmail", "changePassword"],
+  [ROLES.admin]: [
+    "dashboard",
+    "academies",
+    "createLocation",
+    "students",
+    "coaches",
+    "batches",
+    "websiteBuilder",
+    "tournaments",
+    "settings",
+    "changeEmail",
+    "changePassword",
+  ],
+  [ROLES.coach]: ["dashboard", "batches", "changeEmail", "changePassword"],
   [ROLES.student]: ["dashboard", "changeEmail", "changePassword"],
 };
 
@@ -114,9 +144,12 @@ export function getRolePermissions(): Record<Role, PermissionKey[]> {
           if (!adminPerms.length) return defaults;
           return Array.from(new Set<PermissionKey>([...adminPerms, ...defaults]));
         })(),
-        [ROLES.coach]: sanitizePermissions(stored[ROLES.coach]).length
-          ? sanitizePermissions(stored[ROLES.coach])
-          : DEFAULT_ROLE_PERMISSIONS[ROLES.coach],
+        [ROLES.coach]: (() => {
+          const coachPerms = sanitizePermissions(stored[ROLES.coach]);
+          const defaults = DEFAULT_ROLE_PERMISSIONS[ROLES.coach];
+          if (!coachPerms.length) return defaults;
+          return Array.from(new Set<PermissionKey>([...coachPerms, ...defaults]));
+        })(),
         [ROLES.student]: sanitizePermissions(stored[ROLES.student]).length
           ? sanitizePermissions(stored[ROLES.student])
           : DEFAULT_ROLE_PERMISSIONS[ROLES.student],

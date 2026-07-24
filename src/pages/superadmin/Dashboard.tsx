@@ -1,18 +1,23 @@
-import { useEffect, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAppDispatch } from "../../app/hooks";
 import { setPageHeader } from "../../features/ui/uiSlice";
 import StatsOverview from "../../components/dashboard/StatsOverview";
 import { getCurrentUser } from "@/data/account";
-import { getAcademies, getAcademiesByBrandId, getLocationIdsByBrandId } from "@/data/academies";
+import { getAcademies, getAcademiesByBrandId, getLocationIdsByBrandId, updateAcademyStatus } from "@/data/academies";
 import { getMembersForScope } from "@/data/academyMembers";
 import { ROLES } from "@/constants/roles";
 import { useAppBase } from "@/hooks/useAppBase";
+import { useCanManageTables } from "@/hooks/useCanManageTables";
+import TableRowActions from "@/components/table/TableRowActions";
+import TablePagination from "@/components/table/TablePagination";
+import StatusDot from "@/components/table/StatusDot";
+import AcademyViewModal from "@/components/superadmin/AcademyViewModal";
+import AcademyEditModal from "@/components/superadmin/AcademyEditModal";
+import type { AcademyListItem } from "@/types/academy";
 import {
   MapPin,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   ArrowUpRight,
   GraduationCap,
   Users,
@@ -23,17 +28,24 @@ import "../../styles/superadmin/dashboard.css";
 
 export default function Dashboard() {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const user = getCurrentUser();
   const basePath = useAppBase();
   const isAdmin = user?.role === ROLES.admin;
+  const canManage = useCanManageTables();
+  const [viewing, setViewing] = useState<AcademyListItem | null>(null);
+  const [editing, setEditing] = useState<AcademyListItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [academyList, setAcademyList] = useState<AcademyListItem[]>(() =>
+    isAdmin && user?.academyId ? getAcademiesByBrandId(user.academyId) : getAcademies()
+  );
 
   const academies = useMemo(() => {
     if (isAdmin && user?.academyId) {
       return getAcademiesByBrandId(user.academyId);
     }
     return getAcademies();
-  }, [isAdmin, user?.academyId]);
+  }, [isAdmin, user?.academyId, academyList]);
 
   const coachCount = getMembersForScope("coach", {
     allowedAcademyIds: isAdmin && user?.academyId ? getLocationIdsByBrandId(user.academyId) : undefined,
@@ -43,7 +55,12 @@ export default function Dashboard() {
     allowedAcademyIds: isAdmin && user?.academyId ? getLocationIdsByBrandId(user.academyId) : undefined,
   }).length;
 
-  const recentAcademies = academies.slice(0, 5);
+  const recentAcademies = academies;
+  const totalPages = Math.max(1, Math.ceil(recentAcademies.length / pageSize));
+  const paginatedAcademies = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return recentAcademies.slice(start, start + pageSize);
+  }, [recentAcademies, currentPage, pageSize]);
 
   const bottomWidgets = [
     {
@@ -86,8 +103,8 @@ export default function Dashboard() {
   }, [dispatch]);
 
   return (
-    <div className="dashboard-page space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="dashboard-page space-y-4 sm:space-y-6 w-full min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {bottomWidgets.map((widget) => (
           <div
             key={widget.title}
@@ -138,55 +155,57 @@ export default function Dashboard() {
               </Link>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="w-full overflow-hidden">
+              <table className="w-full table-fixed text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                    <th className="pb-3">Academy Name</th>
-                    <th className="pb-3">Location</th>
-                    <th className="pb-3">Students</th>
-                    <th className="pb-3 text-right">Status</th>
+                    <th className="pb-3 w-[45%]">Academy Name</th>
+                    <th className="pb-3 w-[25%]">Location</th>
+                    <th className="pb-3 w-[15%]">Students</th>
+                    {canManage && <th className="pb-3 w-[15%] text-center">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
-                  {recentAcademies.map((academy) => (
-                    <tr
-                      key={academy.id}
-                      className="hover:bg-gray-50/50 transition cursor-pointer"
-                      onClick={() => navigate(`${basePath}/academies/${academy.id}/students`)}
-                    >
-                      <td className="py-3.5">
-                        <div className="flex items-center gap-3">
+                  {paginatedAcademies.map((academy) => (
+                    <tr key={academy.id} className="hover:bg-gray-50/50 transition">
+                      <td className="py-3.5 overflow-hidden pr-2">
+                        <div className="flex items-center gap-2 min-w-0">
                           <img
                             src={academy.logo}
                             alt=""
-                            className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                            className="w-8 h-8 rounded-full object-cover border border-gray-200 shrink-0"
                           />
-                          <span className="font-semibold text-[var(--text-primary)]">
+                          <span
+                            className="font-semibold text-[var(--text-primary)] truncate min-w-0"
+                            title={academy.name}
+                          >
                             {academy.name}
                           </span>
+                          <StatusDot status={academy.status} className="shrink-0" />
                         </div>
                       </td>
-                      <td className="py-3.5 text-gray-500">
-                        <div className="flex items-center gap-1">
-                          <MapPin size={14} className="text-gray-400" />
-                          <span>{academy.city}</span>
+                      <td className="py-3.5 text-gray-500 overflow-hidden pr-2">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <MapPin size={14} className="text-gray-400 shrink-0" />
+                          <span className="truncate">{academy.city}</span>
                         </div>
                       </td>
                       <td className="py-3.5 text-gray-500">{academy.studentCount}</td>
-                      <td className="py-3.5 text-right">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            academy.status === "Active"
-                              ? "bg-green-50 text-green-600 border border-green-100"
-                              : academy.status === "Inactive"
-                              ? "bg-red-50 text-red-500 border border-red-100"
-                              : "bg-orange-50 text-orange-600 border border-orange-100"
-                          }`}
-                        >
-                          {academy.status}
-                        </span>
-                      </td>
+                      {canManage && (
+                        <td className="py-3.5 text-center">
+                          <TableRowActions
+                            onView={() => setViewing(academy)}
+                            onEdit={() => setEditing(academy)}
+                            onToggleStatus={() => {
+                              const next = academy.status === "Active" ? "Inactive" : "Active";
+                              const label = next === "Active" ? "activate" : "deactivate";
+                              if (!window.confirm(`Are you sure you want to ${label} this academy?`)) return;
+                              setAcademyList(updateAcademyStatus(academy.id, next));
+                            }}
+                            isActive={academy.status === "Active"}
+                          />
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -194,28 +213,18 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-100 mt-4">
-            <span className="text-xs text-gray-400 font-medium">
-              Showing {recentAcademies.length} of {academies.length} academies
-            </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 transition"
-                aria-label="Previous page"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button className="w-8 h-8 rounded-lg bg-[var(--text-primary)] text-white text-xs font-semibold flex items-center justify-center">
-                1
-              </button>
-              <button
-                className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-400 transition"
-                aria-label="Next page"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={recentAcademies.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            label="academies"
+          />
         </div>
 
         <div className="bg-white rounded-2xl border border-[var(--border-soft)] p-6 shadow-sm flex flex-col justify-between">
@@ -310,6 +319,28 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {viewing && (
+        <AcademyViewModal
+          academy={viewing}
+          onClose={() => setViewing(null)}
+          onEdit={(id) => {
+            const academy = academyList.find((a) => a.id === id) ?? academies.find((a) => a.id === id);
+            if (academy) {
+              setViewing(null);
+              setEditing(academy);
+            }
+          }}
+        />
+      )}
+
+      {editing && (
+        <AcademyEditModal
+          academy={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => setAcademyList(getAcademies())}
+        />
+      )}
     </div>
   );
 }

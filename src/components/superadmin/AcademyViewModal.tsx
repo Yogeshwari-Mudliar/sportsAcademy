@@ -5,7 +5,6 @@ import type { AcademyListItem, AcademyStatus } from "@/types/academy";
 const statusStyles: Record<AcademyStatus, string> = {
   Active: "bg-green-50 text-green-600 border border-green-100",
   Inactive: "bg-red-50 text-red-500 border border-red-100",
-  Pending: "bg-orange-50 text-orange-600 border border-orange-100",
 };
 
 interface AcademyViewModalProps {

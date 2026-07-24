@@ -5,10 +5,12 @@ import { setPageHeader } from "../../features/ui/uiSlice";
 import AcademyForm from "../../components/forms/AcademyForm";
 import { getAcademyById, updateAcademy } from "../../data/academies";
 import { academyToFormData, type AcademyFormData } from "../../types/academy";
+import { useAppBase } from "@/hooks/useAppBase";
 
 export default function EditAcademy() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const basePath = useAppBase();
   const dispatch = useAppDispatch();
 
   const academy = useMemo(() => {
@@ -33,7 +35,7 @@ export default function EditAcademy() {
           <p className="text-gray-500 font-medium">Academy not found.</p>
           <button
             type="button"
-            onClick={() => navigate("/superadmin/academies")}
+            onClick={() => navigate(`${basePath}/academies`)}
             className="mt-4 h-10 px-4 text-xs font-semibold rounded-xl bg-[var(--accent)] text-white"
           >
             Back to Academy List
@@ -45,7 +47,7 @@ export default function EditAcademy() {
 
   const handleSubmit = (data: AcademyFormData) => {
     updateAcademy(academy.id, data);
-    navigate("/superadmin/academies");
+    navigate(`${basePath}/academies`);
   };
 
   return (
@@ -54,7 +56,7 @@ export default function EditAcademy() {
         mode="edit"
         initialData={academyToFormData(academy)}
         onSubmit={handleSubmit}
-        onCancel={() => navigate("/superadmin/academies")}
+        onCancel={() => navigate(`${basePath}/academies`)}
       />
     </div>
   );
