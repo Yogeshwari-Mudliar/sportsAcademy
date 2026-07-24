@@ -25,33 +25,32 @@ export default function ChangeCategories() {
   }, [dispatch]);
 
   return (
-    <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-soft)] shadow-2xl overflow-hidden">
-      {/* Tabs Header */}
-      <div className="flex items-end px-6 pt-6 bg-[var(--bg-panel)]/40 border-b border-[var(--border-soft)]">
+    <div className="bg-[var(--bg-card)] rounded-xl sm:rounded-2xl border border-[var(--border-soft)] shadow-sm overflow-hidden w-full min-w-0">
+      <div className="flex items-stretch gap-1 px-2 sm:px-4 pt-3 sm:pt-4 bg-[var(--bg-panel)]/40 border-b border-[var(--border-soft)] overflow-x-auto overflow-y-hidden">
         {tabs.map((tab) => {
-        const currentTab = location.pathname.split("/").pop();
-const active = currentTab === tab.path;
+          const currentTab = location.pathname.split("/").pop();
+          const active = currentTab === tab.path;
 
           return (
             <button
               key={tab.path}
+              type="button"
               onClick={() => navigate(tab.path)}
               className={`
-                relative
-                px-8 py-3.5
-                text-[15px]
+                relative shrink-0
+                px-4 sm:px-6 py-2.5 sm:py-3
+                text-sm sm:text-[15px]
                 font-semibold
                 rounded-t-xl
-                transition-all
-                duration-300
+                transition-all duration-200
                 border-t border-x
-                mr-2
                 -mb-px
                 cursor-pointer
+                whitespace-nowrap
                 ${
                   active
-                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-soft)] border-b-transparent shadow-[0_-4px_12px_rgba(0,0,0,0.15)] z-10"
-                    : "bg-transparent text-[var(--text-muted)] border-transparent hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel)]/20"
+                    ? "bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-soft)] border-b-transparent z-10"
+                    : "bg-transparent text-[var(--text-muted)] border-transparent hover:text-[var(--text-primary)]"
                 }
               `}
             >
@@ -64,8 +63,7 @@ const active = currentTab === tab.path;
         })}
       </div>
 
-      {/* Tab Panel Content */}
-      <div className="p-6">
+      <div className="p-3 sm:p-4 md:p-6 min-w-0">
         <Outlet />
       </div>
     </div>

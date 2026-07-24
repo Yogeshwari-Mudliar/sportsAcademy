@@ -12,6 +12,8 @@ export type PermissionKey =
   | "students"
   | "coaches"
   | "batches"
+  | "websiteBuilder"
+  | "tournaments"
   | "settings"
   | "rolesPermissions";
 
@@ -81,6 +83,16 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     description: "Training batches and batch schedules.",
   },
   {
+    key: "websiteBuilder",
+    label: "Website Builder",
+    description: "Create and edit student registration landing website.",
+  },
+  {
+    key: "tournaments",
+    label: "Tournaments",
+    description: "Create and manage academy tournaments and match events.",
+  },
+  {
     key: "settings",
     label: "Settings",
     description: "Dashboard settings and appearance.",
@@ -103,6 +115,8 @@ const DEFAULT_ROLE_PERMISSIONS: Record<Role, PermissionKey[]> = {
     "students",
     "coaches",
     "batches",
+    "websiteBuilder",
+    "tournaments",
     "settings",
     "changeEmail",
     "changePassword",

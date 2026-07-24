@@ -22,6 +22,9 @@ import StudentDashboard from "@/pages/student/Dashboard";
 import CoachesPage from "@/pages/shared/CoachesPage";
 import StudentsPage from "@/pages/shared/StudentsPage";
 import BatchesPage from "@/pages/shared/BatchesPage";
+import TournamentsPage from "@/pages/shared/TournamentsPage";
+import WebsiteBuilderPage from "@/pages/shared/WebsiteBuilderPage";
+import AcademyLandingPage from "@/pages/public/AcademyLandingPage";
 import RoleGuard from "./RoleGuard";
 import PermissionGuard from "./PermissionGuard";
 import { ROLES } from "@/constants/roles";
@@ -66,6 +69,12 @@ const managementRoutes = (
     <Route element={<PermissionGuard permission="batches" />}>
       <Route path="batches" element={<BatchesPage />} />
     </Route>
+    <Route element={<PermissionGuard permission="tournaments" />}>
+      <Route path="tournaments" element={<TournamentsPage />} />
+    </Route>
+    <Route element={<PermissionGuard permission="websiteBuilder" />}>
+      <Route path="website-builder" element={<WebsiteBuilderPage />} />
+    </Route>
     <Route path="change-email" element={<ChangeEmail />} />
     <Route path="change-password" element={<ChangePassword />} />
   </>
@@ -76,6 +85,7 @@ const AppRoutes = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LoginPage />} />
+        <Route path="/register/:academyId" element={<AcademyLandingPage />} />
 
         <Route element={<RoleGuard allowedRoles={[ROLES.superadmin]} />}>
           <Route path="/superadmin" element={<DashboardLayout />}>

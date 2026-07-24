@@ -106,16 +106,19 @@
 .account-page-number {
   min-width: 32px;
   height: 32px;
+  padding: 0 10px;
   border: 1px solid var(--border-soft);
   border-radius: 8px;
   background: var(--bg-card);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .account-page-btn:disabled {

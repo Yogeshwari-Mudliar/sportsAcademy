@@ -28,6 +28,7 @@ export default function AcademyMembersTab({ academyId, memberRole }: AcademyMemb
       getMembers={getMembers}
       defaultAcademyId={academyId}
       showLocationColumn={false}
+      enableBatchAssign={memberRole === "student"}
       subtitle={`${count} ${ROLE_LABELS[memberRole].toLowerCase()}${count !== 1 ? "s" : ""} in this location`}
     />
   );

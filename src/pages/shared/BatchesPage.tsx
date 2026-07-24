@@ -5,9 +5,12 @@ import { setPageHeader } from "@/features/ui/uiSlice";
 import TableRowActions from "@/components/table/TableRowActions";
 import TableAddButton from "@/components/table/TableAddButton";
 import TablePagination from "@/components/table/TablePagination";
+import TableImportExport from "@/components/table/TableImportExport";
+import StatusDot from "@/components/table/StatusDot";
 import { useCanManageTables } from "@/hooks/useCanManageTables";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getAcademies } from "@/data/academies";
+import { getMembersByAcademyAndRole } from "@/data/academyMembers";
 import {
   BATCHES_UPDATED_EVENT,
   addBatch,
@@ -17,11 +20,41 @@ import {
   type Batch,
   type BatchStatus,
 } from "@/data/batches";
+import { downloadCsv, parseCsv, readFileAsText, toCsv } from "@/utils/csv";
+import { abbreviateDays, truncateText } from "@/utils/display";
 
-const statusStyles: Record<BatchStatus, string> = {
-  Active: "bg-green-50 text-green-600 border border-green-100",
-  Inactive: "bg-red-50 text-red-500 border border-red-100",
-};
+function parseTiming(timing?: string): { start: string; end: string } {
+  if (!timing) return { start: "06:00", end: "08:00" };
+  const parts = timing.split("-").map((p) => p.trim());
+  const to24 = (value: string) => {
+    const match = value.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+    if (!match) {
+      if (/^\d{2}:\d{2}$/.test(value)) return value;
+      return "06:00";
+    }
+    let hour = Number(match[1]);
+    const minute = match[2];
+    const meridian = (match[3] || "").toUpperCase();
+    if (meridian === "PM" && hour < 12) hour += 12;
+    if (meridian === "AM" && hour === 12) hour = 0;
+    return `${String(hour).padStart(2, "0")}:${minute}`;
+  };
+  return {
+    start: to24(parts[0] || "06:00"),
+    end: to24(parts[1] || "08:00"),
+  };
+}
+
+function formatTiming(start: string, end: string) {
+  const to12 = (value: string) => {
+    const [hRaw, m] = value.split(":");
+    let h = Number(hRaw);
+    const meridian = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return `${String(h).padStart(2, "0")}:${m} ${meridian}`;
+  };
+  return `${to12(start)} - ${to12(end)}`;
+}
 
 export default function BatchesPage() {
   const dispatch = useAppDispatch();
@@ -98,17 +131,87 @@ export default function BatchesPage() {
     setViewing((v) => (v?.id === batch.id ? { ...v, status: nextStatus } : v));
   };
 
+  const handleExport = () => {
+    const headers = [
+      "name",
+      "academyId",
+      "academyName",
+      "coachName",
+      "timing",
+      "days",
+      "capacity",
+      "status",
+    ];
+    downloadCsv(
+      "batches-export.csv",
+      toCsv(
+        headers,
+        filtered.map((b) => ({
+          name: b.name,
+          academyId: b.academyId,
+          academyName: b.academyName,
+          coachName: b.coachName,
+          timing: b.timing,
+          days: b.days,
+          capacity: b.capacity,
+          status: b.status,
+        }))
+      )
+    );
+  };
+
+  const handleImport = async (file: File) => {
+    const text = await readFileAsText(file);
+    const { rows } = parseCsv(text);
+    let count = 0;
+    for (const row of rows) {
+      const name = (row.name || "").trim();
+      if (!name) continue;
+      const academyId = Number(row.academyid || row.academyId);
+      const academy =
+        academies.find((a) => a.id === academyId) ||
+        academies.find(
+          (a) => a.name.toLowerCase() === (row.academyname || row.academyName || "").toLowerCase()
+        );
+      if (!academy) continue;
+      const statusRaw = (row.status || "Active").trim();
+      const status: BatchStatus =
+        statusRaw.toLowerCase() === "inactive" ? "Inactive" : "Active";
+      addBatch({
+        name,
+        academyId: academy.id,
+        academyName: academy.name,
+        coachName: (row.coachname || row.coachName || "").trim() || "TBD",
+        timing: (row.timing || "06:00 AM - 08:00 AM").trim(),
+        days: (row.days || "Mon, Wed, Fri").trim(),
+        capacity: Number(row.capacity) || 20,
+        status,
+      });
+      count += 1;
+    }
+    setBatches(getBatches());
+    if (count) window.alert(`Imported ${count} batches.`);
+    else window.alert("No valid batches imported. Need name and academyId/academyName.");
+  };
+
   return (
     <div className="dashboard-page w-full min-w-0 max-w-full">
       <div className="bg-white rounded-xl sm:rounded-2xl border border-[var(--border-soft)] shadow-sm overflow-hidden p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 sm:pb-6 border-b border-gray-100">
-          <div>
+          <div className="min-w-0">
             <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">Batches</h2>
             <p className="text-xs text-[var(--text-muted)] mt-1">
               Manage training batches across academies · {filtered.length} records
             </p>
           </div>
-          <TableAddButton label="Add Batch" show={canManage} onClick={() => setAdding(true)} />
+          <div className="flex flex-wrap items-center gap-2">
+            <TableImportExport
+              show={canManage}
+              onExport={handleExport}
+              onImportFile={handleImport}
+            />
+            <TableAddButton label="Add Batch" show={canManage} onClick={() => setAdding(true)} />
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row md:flex-wrap gap-3 py-4 sm:py-6">
@@ -161,38 +264,56 @@ export default function BatchesPage() {
             No batches found matching search/filter criteria.
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-2">
-            <table className="min-w-full border-collapse">
+          <div className="w-full overflow-hidden">
+            <table className="w-full table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
-                  <th className="py-3 px-3">Batch</th>
-                  <th className="py-3 px-3">Academy</th>
-                  <th className="py-3 px-3">Coach</th>
-                  <th className="py-3 px-3">Timing</th>
-                  <th className="py-3 px-3">Days</th>
-                  <th className="py-3 px-3">Capacity</th>
-                  <th className="py-3 px-3">Status</th>
-                  {canManage && <th className="py-3 px-3 text-center">Actions</th>}
+                  <th className="py-3 px-2 w-[18%]">Batch</th>
+                  <th className="py-3 px-2 w-[18%]">Academy</th>
+                  <th className="py-3 px-2 w-[14%]">Coach</th>
+                  <th className="py-3 px-2 w-[16%]">Timing</th>
+                  <th className="py-3 px-2 w-[10%]">Days</th>
+                  <th className="py-3 px-2 w-[10%]">Capacity</th>
+                  {canManage && <th className="py-3 px-2 w-[8%] text-center">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {paginated.map((batch) => (
                   <tr key={batch.id} className="hover:bg-gray-50/50 transition">
-                    <td className="py-3 px-3 font-semibold">{batch.name}</td>
-                    <td className="py-3 px-3 text-gray-600">{batch.academyName}</td>
-                    <td className="py-3 px-3 text-gray-600">{batch.coachName}</td>
-                    <td className="py-3 px-3 text-gray-600 whitespace-nowrap">{batch.timing}</td>
-                    <td className="py-3 px-3 text-gray-600 whitespace-nowrap">{batch.days}</td>
-                    <td className="py-3 px-3 text-gray-600">
-                      {batch.enrolled}/{batch.capacity}
+                    <td className="py-3 px-2 overflow-hidden">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="font-semibold truncate min-w-0" title={batch.name}>
+                          {batch.name}
+                        </span>
+                        <StatusDot status={batch.status} className="shrink-0" />
+                      </div>
                     </td>
-                    <td className="py-3 px-3">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusStyles[batch.status]}`}>
-                        {batch.status}
+                    <td className="py-3 px-2 text-gray-600 overflow-hidden">
+                      <span className="block truncate" title={batch.academyName}>
+                        {truncateText(batch.academyName, 24)}
                       </span>
                     </td>
+                    <td className="py-3 px-2 text-gray-600 overflow-hidden">
+                      <span className="block truncate" title={batch.coachName}>
+                        {batch.coachName}
+                      </span>
+                    </td>
+                    <td className="py-3 px-2 text-gray-600 overflow-hidden">
+                      <span className="block truncate" title={batch.timing}>
+                        {batch.timing}
+                      </span>
+                    </td>
+                    <td
+                      className="py-3 px-2 text-gray-600 overflow-hidden tracking-wide"
+                      title={batch.days}
+                    >
+                      <span className="block truncate">{abbreviateDays(batch.days)}</span>
+                    </td>
+                    <td className="py-3 px-2 text-gray-600">
+                      {batch.enrolled}/{batch.capacity}
+                    </td>
                     {canManage && (
-                      <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                         <TableRowActions
                           onView={() => setViewing(batch)}
                           onEdit={() => setEditing(batch)}
@@ -292,18 +413,46 @@ function BatchModal({
   }) => void;
 }) {
   const isView = mode === "view";
+  const initialTiming = parseTiming(batch?.timing);
+  const [academyId, setAcademyId] = useState<number>(
+    batch?.academyId ?? academies[0]?.id ?? 0
+  );
+  const [coachName, setCoachName] = useState(batch?.coachName ?? "");
+  const [startTime, setStartTime] = useState(initialTiming.start);
+  const [endTime, setEndTime] = useState(initialTiming.end);
+
+  const coaches = useMemo(
+    () =>
+      getMembersByAcademyAndRole(academyId, "coach").filter(
+        (c) => c.status === "Active"
+      ),
+    [academyId]
+  );
+
+  useEffect(() => {
+    if (!coaches.length) {
+      setCoachName("");
+      return;
+    }
+    if (!coaches.some((c) => c.name === coachName)) {
+      setCoachName(coaches[0].name);
+    }
+  }, [coaches, coachName]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const academyId = Number(fd.get("academyId"));
     const academy = academies.find((a) => a.id === academyId);
+    if (!coachName) {
+      window.alert("Please select a coach for this academy.");
+      return;
+    }
     onSave({
       name: String(fd.get("name")),
       academyId,
       academyName: academy?.name ?? "",
-      coachName: String(fd.get("coachName")),
-      timing: String(fd.get("timing")),
+      coachName,
+      timing: formatTiming(startTime, endTime),
       days: String(fd.get("days")),
       capacity: Number(fd.get("capacity")) || 20,
       enrolled: batch?.enrolled ?? 0,
@@ -356,8 +505,8 @@ function BatchModal({
               className="w-full h-10 px-3 border rounded-xl text-sm"
             />
             <select
-              name="academyId"
-              defaultValue={batch?.academyId ?? academies[0]?.id}
+              value={academyId}
+              onChange={(e) => setAcademyId(Number(e.target.value))}
               className="w-full h-10 px-3 border rounded-xl text-sm"
               required
             >
@@ -367,20 +516,44 @@ function BatchModal({
                 </option>
               ))}
             </select>
-            <input
-              name="coachName"
-              defaultValue={batch?.coachName}
-              placeholder="Coach name"
-              required
+            <select
+              value={coachName}
+              onChange={(e) => setCoachName(e.target.value)}
               className="w-full h-10 px-3 border rounded-xl text-sm"
-            />
-            <input
-              name="timing"
-              defaultValue={batch?.timing}
-              placeholder="Timing (e.g. 06:00 AM - 08:00 AM)"
               required
-              className="w-full h-10 px-3 border rounded-xl text-sm"
-            />
+            >
+              {coaches.length === 0 ? (
+                <option value="">No coaches for this academy</option>
+              ) : (
+                coaches.map((coach) => (
+                  <option key={coach.id} value={coach.name}>
+                    {coach.name}
+                  </option>
+                ))
+              )}
+            </select>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] font-semibold uppercase text-gray-400">Start Time</label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  required
+                  className="mt-1 w-full h-10 px-3 border rounded-xl text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold uppercase text-gray-400">End Time</label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  required
+                  className="mt-1 w-full h-10 px-3 border rounded-xl text-sm"
+                />
+              </div>
+            </div>
             <input
               name="days"
               defaultValue={batch?.days}

@@ -151,17 +151,8 @@ export default function SuperAdminTable({
             aria-label="Previous page"
           >
             <ChevronLeft size={16} />
+            <span>Previous</span>
           </button>
-          {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-            <button
-              key={page}
-              type="button"
-              className={`account-page-number ${page === currentPage ? "active" : ""}`}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </button>
-          ))}
           <button
             type="button"
             className="account-page-btn"
@@ -169,6 +160,7 @@ export default function SuperAdminTable({
             disabled={currentPage === totalPages}
             aria-label="Next page"
           >
+            <span>Next</span>
             <ChevronRight size={16} />
           </button>
         </div>

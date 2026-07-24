@@ -1,25 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Edit3, Eye, MoreVertical, UserCheck, UserX } from "lucide-react";
-
-const MENU_HEIGHT = 132;
-const MENU_WIDTH = 148;
+import { Edit3, Eye, Layers, MoreVertical, UserCheck, UserX } from "lucide-react";
 
 interface TableRowActionsProps {
   onView: () => void;
-  onEdit: () => void;
-  onToggleStatus: () => void;
+  onEdit?: () => void;
+  onToggleStatus?: () => void;
+  onAssignBatch?: () => void;
   /** When true, menu shows Deactivate; otherwise Activate */
   isActive?: boolean;
   showActions?: boolean;
+  /** When false, only View is shown (no edit / activate) */
+  canEdit?: boolean;
 }
 
 export default function TableRowActions({
   onView,
   onEdit,
   onToggleStatus,
+  onAssignBatch,
   isActive = true,
   showActions = true,
+  canEdit = true,
 }: TableRowActionsProps) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState<{
@@ -29,16 +31,19 @@ export default function TableRowActions({
   } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const showManage = canEdit && Boolean(onEdit || onToggleStatus);
+  const menuHeight = onAssignBatch && canEdit ? 172 : showManage ? 132 : 52;
+  const menuWidth = 160;
 
   const placeMenu = () => {
     if (!rootRef.current) return;
     const rect = rootRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const openUpward = spaceBelow < MENU_HEIGHT + 12 && spaceAbove > spaceBelow;
+    const openUpward = spaceBelow < menuHeight + 12 && spaceAbove > spaceBelow;
     const left = Math.min(
-      Math.max(8, rect.right - MENU_WIDTH),
-      window.innerWidth - MENU_WIDTH - 8
+      Math.max(8, rect.right - menuWidth),
+      window.innerWidth - menuWidth - 8
     );
 
     if (openUpward) {
@@ -127,7 +132,7 @@ export default function TableRowActions({
           <div
             ref={menuRef}
             role="menu"
-            className="fixed z-[100] min-w-[148px] rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+            className="fixed z-[100] min-w-[160px] rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
             style={{
               top: coords.top,
               bottom: coords.bottom,
@@ -140,17 +145,28 @@ export default function TableRowActions({
               label="View"
               onClick={() => run(onView)}
             />
-            <MenuItem
-              icon={<Edit3 size={14} />}
-              label="Edit"
-              onClick={() => run(onEdit)}
-            />
-            <MenuItem
-              icon={isActive ? <UserX size={14} /> : <UserCheck size={14} />}
-              label={isActive ? "Deactivate" : "Activate"}
-              onClick={() => run(onToggleStatus)}
-              danger={isActive}
-            />
+            {canEdit && onEdit && (
+              <MenuItem
+                icon={<Edit3 size={14} />}
+                label="Edit"
+                onClick={() => run(onEdit)}
+              />
+            )}
+            {canEdit && onAssignBatch && (
+              <MenuItem
+                icon={<Layers size={14} />}
+                label="Assign Batch"
+                onClick={() => run(onAssignBatch)}
+              />
+            )}
+            {canEdit && onToggleStatus && (
+              <MenuItem
+                icon={isActive ? <UserX size={14} /> : <UserCheck size={14} />}
+                label={isActive ? "Deactivate" : "Activate"}
+                onClick={() => run(onToggleStatus)}
+                danger={isActive}
+              />
+            )}
           </div>,
           document.body
         )}

@@ -9,10 +9,12 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import {
   ACADEMY_TYPES,
+  EMPTY_ACADEMY_FORM,
   type AcademyListItem,
   type AcademyStatus,
 } from "@/types/academy";
 import {
+  createAcademy,
   getAcademies,
   updateAcademyStatus,
 } from "@/data/academies";
@@ -20,13 +22,11 @@ import AcademyViewModal from "./AcademyViewModal";
 import AcademyEditModal from "./AcademyEditModal";
 import TableRowActions from "@/components/table/TableRowActions";
 import TablePagination from "@/components/table/TablePagination";
+import TableImportExport from "@/components/table/TableImportExport";
+import StatusDot from "@/components/table/StatusDot";
 import { useCanManageTables } from "@/hooks/useCanManageTables";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-
-const statusStyles: Record<AcademyStatus, string> = {
-  Active: "bg-green-50 text-green-600 border border-green-100",
-  Inactive: "bg-red-50 text-red-500 border border-red-100",
-};
+import { downloadCsv, parseCsv, readFileAsText, toCsv } from "@/utils/csv";
 
 export default function AcademyList({
   detailBasePath = "/superadmin/academies",
@@ -124,6 +124,48 @@ export default function AcademyList({
     );
   };
 
+  const handleExport = () => {
+    const headers = ["name", "city", "type", "status", "studentCount", "email", "phone", "ownerName"];
+    downloadCsv(
+      "academies-export.csv",
+      toCsv(
+        headers,
+        filteredAcademies.map((a) => ({
+          name: a.name,
+          city: a.city,
+          type: a.type,
+          status: a.status,
+          studentCount: a.studentCount,
+          email: a.email,
+          phone: a.phone,
+          ownerName: a.ownerName,
+        }))
+      )
+    );
+  };
+
+  const handleImport = async (file: File) => {
+    const text = await readFileAsText(file);
+    const { rows } = parseCsv(text);
+    let count = 0;
+    for (const row of rows) {
+      const name = (row.name || "").trim();
+      if (!name) continue;
+      createAcademy({
+        ...EMPTY_ACADEMY_FORM,
+        name,
+        city: row.city || "",
+        academyType: row.type || ACADEMY_TYPES[0],
+        email: row.email || "",
+        phone: row.phone || "",
+        ownerName: row.ownername || row.ownerName || "",
+      });
+      count += 1;
+    }
+    refresh();
+    if (count) window.alert(`Imported ${count} academies.`);
+  };
+
   const emptyState = (
     <div className="py-10 sm:py-12 px-4 text-center text-gray-400 font-medium text-sm">
       No academies found matching search/filter criteria.
@@ -145,24 +187,29 @@ export default function AcademyList({
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto shrink-0">
-          {showAddLocationButton && (
-            <Link
-              to={addLocationPath}
-              className="h-10 px-4 text-xs font-semibold rounded-xl border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition inline-flex items-center justify-center gap-2 w-full sm:w-auto touch-manipulation"
-            >
-              <Plus size={16} />
-              Add Location
-            </Link>
-          )}
-          {showCreateButton && (
-          <Link
-            to="/superadmin/academies/create"
-            className="h-10 px-4 text-xs font-semibold rounded-xl bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white transition inline-flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto touch-manipulation"
-          >
-            <Plus size={16} />
-            Create Academy
-          </Link>
-          )}
+            <TableImportExport
+              show={canManage}
+              onExport={handleExport}
+              onImportFile={handleImport}
+            />
+            {showAddLocationButton && (
+              <Link
+                to={addLocationPath}
+                className="h-10 px-4 text-xs font-semibold rounded-xl border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent)]/10 transition inline-flex items-center justify-center gap-2 w-full sm:w-auto touch-manipulation"
+              >
+                <Plus size={16} />
+                Add Location
+              </Link>
+            )}
+            {showCreateButton && (
+              <Link
+                to="/superadmin/academies/create"
+                className="h-10 px-4 text-xs font-semibold rounded-xl bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-white transition inline-flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto touch-manipulation"
+              >
+                <Plus size={16} />
+                Create Academy
+              </Link>
+            )}
           </div>
         </div>
 
@@ -235,14 +282,10 @@ export default function AcademyList({
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-sm sm:text-base text-[var(--text-primary)] leading-snug break-words hover:text-[var(--accent)] transition">
-                          {academy.name}
+                        <h3 className="font-semibold text-sm sm:text-base text-[var(--text-primary)] leading-snug break-words hover:text-[var(--accent)] transition flex items-center gap-2 min-w-0">
+                          <span className="min-w-0 break-words">{academy.name}</span>
+                          <StatusDot status={academy.status} className="shrink-0" />
                         </h3>
-                        <span
-                          className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold ${statusStyles[academy.status]}`}
-                        >
-                          {academy.status}
-                        </span>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-gray-500">
                         <span className="inline-flex items-center gap-1">
@@ -277,19 +320,18 @@ export default function AcademyList({
           )}
         </div>
 
-        <div className="hidden lg:block overflow-x-auto -mx-6">
-          <div className="inline-block min-w-full align-middle px-6">
-            <table className="min-w-full border-collapse">
+        <div className="hidden lg:block overflow-hidden -mx-6 px-6">
+          <div className="w-full">
+            <table className="w-full table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
-                  <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Logo</th>
-                  <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Academy Name</th>
-                  <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Location</th>
-                  <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Type</th>
-                  <th className="py-3 px-3 xl:px-4 whitespace-nowrap">No. of Students</th>
-                  <th className="py-3 px-3 xl:px-4 whitespace-nowrap">Status</th>
+                  <th className="py-3 px-2 w-[8%]">Logo</th>
+                  <th className="py-3 px-2 w-[28%]">Academy Name</th>
+                  <th className="py-3 px-2 w-[14%]">Location</th>
+                  <th className="py-3 px-2 w-[18%]">Type</th>
+                  <th className="py-3 px-2 w-[14%]">No. of Students</th>
                   {canManage && (
-                    <th className="py-3 px-3 xl:px-4 text-center whitespace-nowrap">Actions</th>
+                    <th className="py-3 px-2 w-[10%] text-center">Actions</th>
                   )}
                 </tr>
               </thead>
@@ -301,38 +343,37 @@ export default function AcademyList({
                       className="hover:bg-gray-50/50 transition cursor-pointer"
                       onClick={() => handleOpenAcademy(academy.id)}
                     >
-                      <td className="py-3.5 px-3 xl:px-4">
+                      <td className="py-3.5 px-2">
                         <img
                           src={academy.logo}
                           alt=""
                           className="w-10 h-10 rounded-xl object-cover border border-gray-200"
                         />
                       </td>
-                      <td className="py-3.5 px-3 xl:px-4 max-w-[200px] xl:max-w-none">
-                        <p className="font-semibold text-[var(--text-primary)] truncate hover:text-[var(--accent)] transition">
-                          {academy.name}
-                        </p>
+                      <td className="py-3.5 px-2 overflow-hidden">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <p
+                            className="font-semibold text-[var(--text-primary)] truncate hover:text-[var(--accent)] transition min-w-0"
+                            title={academy.name}
+                          >
+                            {academy.name}
+                          </p>
+                          <StatusDot status={academy.status} className="shrink-0" />
+                        </div>
                       </td>
-                      <td className="py-3.5 px-3 xl:px-4 text-gray-600 font-medium whitespace-nowrap">
-                        {academy.city}
+                      <td className="py-3.5 px-2 text-gray-600 font-medium overflow-hidden">
+                        <span className="block truncate">{academy.city}</span>
                       </td>
-                      <td className="py-3.5 px-3 xl:px-4">
-                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100 whitespace-nowrap">
+                      <td className="py-3.5 px-2 overflow-hidden">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-100 inline-block max-w-full truncate">
                           {academy.type}
                         </span>
                       </td>
-                      <td className="py-3.5 px-3 xl:px-4 text-gray-600 font-medium whitespace-nowrap">
+                      <td className="py-3.5 px-2 text-gray-600 font-medium">
                         {academy.studentCount}
                       </td>
-                      <td className="py-3.5 px-3 xl:px-4">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusStyles[academy.status]}`}
-                        >
-                          {academy.status}
-                        </span>
-                      </td>
                       {canManage && (
-                      <td className="py-3.5 px-3 xl:px-4" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-3.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                         <TableRowActions
                           onView={() => handleView(academy)}
                           onEdit={() => handleEdit(academy.id)}
@@ -345,7 +386,7 @@ export default function AcademyList({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={canManage ? 7 : 6}>{emptyState}</td>
+                    <td colSpan={canManage ? 6 : 5}>{emptyState}</td>
                   </tr>
                 )}
               </tbody>

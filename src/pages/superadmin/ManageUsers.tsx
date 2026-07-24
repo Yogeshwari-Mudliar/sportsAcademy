@@ -3,7 +3,6 @@ import { useAppDispatch } from "../../app/hooks";
 import { setPageHeader } from "../../features/ui/uiSlice";
 import { 
   Search, 
-  Download, 
   RotateCcw, 
   MapPin, 
   Calendar
@@ -11,8 +10,11 @@ import {
 import TableRowActions from "@/components/table/TableRowActions";
 import TableAddButton from "@/components/table/TableAddButton";
 import TablePagination from "@/components/table/TablePagination";
+import TableImportExport from "@/components/table/TableImportExport";
+import StatusDot from "@/components/table/StatusDot";
 import { useCanManageTables } from "@/hooks/useCanManageTables";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { downloadCsv, parseCsv, readFileAsText, toCsv } from "@/utils/csv";
 
 interface UserItem {
   id: number;
@@ -208,10 +210,70 @@ export default function ManageUsers() {
     setAdding(false);
   };
 
+  const handleExport = () => {
+    const headers = ["name", "email", "phone", "role", "academy", "location", "status", "joinedOn"];
+    downloadCsv(
+      "users-export.csv",
+      toCsv(
+        headers,
+        filteredUsers.map((u) => ({
+          name: u.name,
+          email: u.email,
+          phone: u.phone,
+          role: u.role,
+          academy: u.academy,
+          location: u.location,
+          status: u.status,
+          joinedOn: u.joinedOn,
+        }))
+      )
+    );
+  };
+
+  const handleImport = async (file: File) => {
+    const text = await readFileAsText(file);
+    const { rows } = parseCsv(text);
+    const nextIdBase = users.reduce((max, u) => Math.max(max, u.id), 0);
+    const imported: UserItem[] = [];
+    rows.forEach((row, index) => {
+      const name = (row.name || "").trim();
+      const email = (row.email || "").trim();
+      if (!name || !email) return;
+      const roleRaw = (row.role || "Student").trim();
+      const role: UserItem["role"] =
+        roleRaw === "Admin" || roleRaw === "Coach" ? roleRaw : "Student";
+      const statusRaw = (row.status || "Active").trim();
+      imported.push({
+        id: nextIdBase + index + 1,
+        name,
+        email,
+        phone: (row.phone || "").trim(),
+        role,
+        academy: (row.academy || "").trim() || "—",
+        location: (row.location || "").trim() || "—",
+        status: statusRaw.toLowerCase() === "inactive" ? "Inactive" : "Active",
+        joinedOn:
+          (row.joinedon || row.joinedOn || "").trim() ||
+          new Date().toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }),
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=1a56db&color=fff`,
+      });
+    });
+    if (!imported.length) {
+      window.alert("CSV must include name and email columns.");
+      return;
+    }
+    persistUsers([...imported, ...users]);
+    window.alert(`Imported ${imported.length} users.`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Table Container Card */}
-      <div className="bg-white rounded-2xl border border-[var(--border-soft)] shadow-sm overflow-hidden p-6">
+      <div className="bg-white rounded-2xl border border-[var(--border-soft)] shadow-sm overflow-hidden p-4 sm:p-6">
         
         {/* Card Header Title and Actions */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100">
@@ -219,11 +281,12 @@ export default function ManageUsers() {
             <h2 className="text-xl font-bold text-[var(--text-primary)]">All Users</h2>
             <p className="text-xs text-[var(--text-muted)] mt-1">Manage and monitor all users across the platform.</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="h-10 px-4 text-xs font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 text-[var(--text-primary)] transition flex items-center gap-2">
-              <Download size={15} />
-              Export
-            </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <TableImportExport
+              show={canManage}
+              onExport={handleExport}
+              onImportFile={handleImport}
+            />
             <TableAddButton label="Add User" show={canManage} onClick={() => setAdding(true)} />
           </div>
         </div>
@@ -307,40 +370,41 @@ export default function ManageUsers() {
         </div>
 
         {/* Users Table */}
-        <div className="overflow-x-auto -mx-6">
-          <div className="inline-block min-w-full align-middle px-6">
-            <table className="min-w-full border-collapse">
+        <div className="w-full overflow-hidden -mx-6 px-6">
+            <table className="w-full table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
-                  <th className="py-3 px-4 w-12 text-center">#</th>
-                  <th className="py-3 px-4">User</th>
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Academy</th>
-                  <th className="py-3 px-4">Email</th>
-                  <th className="py-3 px-4">Phone</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Joined On</th>
-                  {canManage && <th className="py-3 px-4 text-center">Actions</th>}
+                  <th className="py-3 px-2 w-[5%] text-center">#</th>
+                  <th className="py-3 px-2 w-[18%]">User</th>
+                  <th className="py-3 px-2 w-[10%]">Role</th>
+                  <th className="py-3 px-2 w-[18%]">Academy</th>
+                  <th className="py-3 px-2 w-[18%]">Email</th>
+                  <th className="py-3 px-2 w-[12%]">Phone</th>
+                  <th className="py-3 px-2 w-[10%]">Joined On</th>
+                  {canManage && <th className="py-3 px-2 w-[7%] text-center">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
                 {paginatedUsers.length > 0 ? (
                   paginatedUsers.map((user, idx) => (
                     <tr key={user.id} className="hover:bg-gray-50/50 transition">
-                      <td className="py-3.5 px-4 text-center text-gray-400 font-semibold">
+                      <td className="py-3.5 px-2 text-center text-gray-400 font-semibold">
                         {(currentPage - 1) * pageSize + idx + 1}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover border border-gray-200" />
-                          <div>
-                            <p className="font-semibold text-[var(--text-primary)]">{user.name}</p>
-                            <p className="text-xs text-[var(--text-faint)]">{user.email}</p>
+                      <td className="py-3.5 px-2 overflow-hidden">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover border border-gray-200 shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5 min-w-0">
+                              <span className="truncate" title={user.name}>{user.name}</span>
+                              <StatusDot status={user.status} className="shrink-0" />
+                            </p>
+                            <p className="text-xs text-[var(--text-faint)] truncate" title={user.email}>{user.email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      <td className="py-3.5 px-2 overflow-hidden">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-block max-w-full truncate ${
                           user.role === "Admin" ? "bg-purple-50 text-purple-600 border border-purple-100" :
                           user.role === "Coach" ? "bg-blue-50 text-blue-600 border border-blue-100" :
                           "bg-green-50 text-green-600 border border-green-100"
@@ -348,27 +412,26 @@ export default function ManageUsers() {
                           {user.role}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div>
-                          <p className="font-medium text-[var(--text-primary)]">{user.academy}</p>
-                          <p className="text-xs text-gray-400 flex items-center gap-0.5 mt-0.5">
-                            <MapPin size={11} /> {user.location}
+                      <td className="py-3.5 px-2 overflow-hidden">
+                        <div className="min-w-0">
+                          <p className="font-medium text-[var(--text-primary)] truncate" title={user.academy}>{user.academy}</p>
+                          <p className="text-xs text-gray-400 flex items-center gap-0.5 mt-0.5 min-w-0">
+                            <MapPin size={11} className="shrink-0" />
+                            <span className="truncate">{user.location}</span>
                           </p>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-gray-600 font-medium">{user.email}</td>
-                      <td className="py-3.5 px-4 text-gray-600 font-medium">{user.phone}</td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          user.status === "Active" ? "bg-green-50 text-green-600 border border-green-100" :
-                          "bg-red-50 text-red-500 border border-red-100"
-                        }`}>
-                          {user.status}
-                        </span>
+                      <td className="py-3.5 px-2 text-gray-600 font-medium overflow-hidden">
+                        <span className="block truncate" title={user.email}>{user.email}</span>
                       </td>
-                      <td className="py-3.5 px-4 text-gray-500">{user.joinedOn}</td>
+                      <td className="py-3.5 px-2 text-gray-600 font-medium overflow-hidden">
+                        <span className="block truncate" title={user.phone}>{user.phone}</span>
+                      </td>
+                      <td className="py-3.5 px-2 text-gray-500 overflow-hidden">
+                        <span className="block truncate">{user.joinedOn}</span>
+                      </td>
                       {canManage && (
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-2 text-center">
                         <TableRowActions
                           onView={() => setViewing(user)}
                           onEdit={() => setEditing(user)}
@@ -381,14 +444,13 @@ export default function ManageUsers() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={9} className="py-12 text-center text-gray-400 font-medium">
+                    <td colSpan={canManage ? 8 : 7} className="py-12 text-center text-gray-400 font-medium">
                       No users found matching search/filter criteria.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
-          </div>
         </div>
 
         <TablePagination

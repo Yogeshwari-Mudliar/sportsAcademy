@@ -11,6 +11,7 @@ import { useAppBase } from "@/hooks/useAppBase";
 import { useCanManageTables } from "@/hooks/useCanManageTables";
 import TableRowActions from "@/components/table/TableRowActions";
 import TablePagination from "@/components/table/TablePagination";
+import StatusDot from "@/components/table/StatusDot";
 import AcademyViewModal from "@/components/superadmin/AcademyViewModal";
 import AcademyEditModal from "@/components/superadmin/AcademyEditModal";
 import type { AcademyListItem } from "@/types/academy";
@@ -102,8 +103,8 @@ export default function Dashboard() {
   }, [dispatch]);
 
   return (
-    <div className="dashboard-page space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="dashboard-page space-y-4 sm:space-y-6 w-full min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {bottomWidgets.map((widget) => (
           <div
             key={widget.title}
@@ -154,50 +155,42 @@ export default function Dashboard() {
               </Link>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="w-full overflow-hidden">
+              <table className="w-full table-fixed text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                    <th className="pb-3">Academy Name</th>
-                    <th className="pb-3">Location</th>
-                    <th className="pb-3">Students</th>
-                    <th className="pb-3 text-right">Status</th>
-                    {canManage && <th className="pb-3 text-center">Actions</th>}
+                    <th className="pb-3 w-[45%]">Academy Name</th>
+                    <th className="pb-3 w-[25%]">Location</th>
+                    <th className="pb-3 w-[15%]">Students</th>
+                    {canManage && <th className="pb-3 w-[15%] text-center">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
                   {paginatedAcademies.map((academy) => (
                     <tr key={academy.id} className="hover:bg-gray-50/50 transition">
-                      <td className="py-3.5">
-                        <div className="flex items-center gap-3">
+                      <td className="py-3.5 overflow-hidden pr-2">
+                        <div className="flex items-center gap-2 min-w-0">
                           <img
                             src={academy.logo}
                             alt=""
-                            className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                            className="w-8 h-8 rounded-full object-cover border border-gray-200 shrink-0"
                           />
-                          <span className="font-semibold text-[var(--text-primary)]">
+                          <span
+                            className="font-semibold text-[var(--text-primary)] truncate min-w-0"
+                            title={academy.name}
+                          >
                             {academy.name}
                           </span>
+                          <StatusDot status={academy.status} className="shrink-0" />
                         </div>
                       </td>
-                      <td className="py-3.5 text-gray-500">
-                        <div className="flex items-center gap-1">
-                          <MapPin size={14} className="text-gray-400" />
-                          <span>{academy.city}</span>
+                      <td className="py-3.5 text-gray-500 overflow-hidden pr-2">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <MapPin size={14} className="text-gray-400 shrink-0" />
+                          <span className="truncate">{academy.city}</span>
                         </div>
                       </td>
                       <td className="py-3.5 text-gray-500">{academy.studentCount}</td>
-                      <td className="py-3.5 text-right">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            academy.status === "Active"
-                              ? "bg-green-50 text-green-600 border border-green-100"
-                              : "bg-red-50 text-red-500 border border-red-100"
-                          }`}
-                        >
-                          {academy.status}
-                        </span>
-                      </td>
                       {canManage && (
                         <td className="py-3.5 text-center">
                           <TableRowActions

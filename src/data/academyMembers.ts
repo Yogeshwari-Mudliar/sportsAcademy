@@ -12,6 +12,18 @@ export interface AcademyMember {
   status: MemberStatus;
   joinedOn: string;
   avatar: string;
+  batchId?: number | null;
+  batchName?: string;
+  /** Student profile fields (optional for non-students) */
+  dateOfBirth?: string;
+  gender?: "Male" | "Female" | "Other" | string;
+  bloodGroup?: string;
+  parentName?: string;
+  parentPhone?: string;
+  playingRole?: string;
+  sportExperience?: string;
+  address?: string;
+  city?: string;
 }
 
 const INITIAL_MEMBERS: AcademyMember[] = [
@@ -145,7 +157,27 @@ export function addAcademyMember(
 
 export function updateAcademyMember(
   id: number,
-  data: Partial<Pick<AcademyMember, "name" | "email" | "phone" | "status" | "academyId">>
+  data: Partial<
+    Pick<
+      AcademyMember,
+      | "name"
+      | "email"
+      | "phone"
+      | "status"
+      | "academyId"
+      | "batchId"
+      | "batchName"
+      | "dateOfBirth"
+      | "gender"
+      | "bloodGroup"
+      | "parentName"
+      | "parentPhone"
+      | "playingRole"
+      | "sportExperience"
+      | "address"
+      | "city"
+    >
+  >
 ): AcademyMember[] {
   const members = getAcademyMembers();
   const index = members.findIndex((m) => m.id === id);
@@ -153,7 +185,7 @@ export function updateAcademyMember(
 
   const cleanData = Object.fromEntries(
     Object.entries(data).filter(([, value]) => value !== undefined)
-  ) as Partial<Pick<AcademyMember, "name" | "email" | "phone" | "status" | "academyId">>;
+  ) as Partial<AcademyMember>;
 
   const next = [...members];
   next[index] = { ...members[index], ...cleanData };
@@ -161,8 +193,44 @@ export function updateAcademyMember(
   return next;
 }
 
+export function assignMemberBatch(
+  memberId: number,
+  batch: { id: number; name: string } | null
+): AcademyMember[] {
+  return updateAcademyMember(memberId, {
+    batchId: batch?.id ?? null,
+    batchName: batch?.name ?? "",
+  });
+}
+
 export function setAcademyMemberStatus(id: number, status: MemberStatus): AcademyMember[] {
   return updateAcademyMember(id, { status });
+}
+
+export function bulkAddAcademyMembers(
+  rows: Array<Omit<AcademyMember, "id" | "avatar" | "joinedOn"> & { joinedOn?: string }>
+): AcademyMember[] {
+  let members = getAcademyMembers();
+  let nextId = members.reduce((max, m) => Math.max(max, m.id), 0) + 1;
+  const created: AcademyMember[] = rows.map((row) => {
+    const member: AcademyMember = {
+      ...row,
+      id: nextId,
+      joinedOn:
+        row.joinedOn ??
+        new Date().toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+      avatar: `https://i.pravatar.cc/100?img=${(nextId % 70) + 1}`,
+    };
+    nextId += 1;
+    return member;
+  });
+  members = [...created, ...members];
+  writeMembers(members);
+  return members;
 }
 
 export function getMembersByAcademyAndRole(

@@ -152,3 +152,25 @@ export function updateBatch(
 export function setBatchStatus(id: number, status: BatchStatus): Batch[] {
   return updateBatch(id, { status });
 }
+
+export function getBatchesByAcademy(academyId: number, onlyActive = true): Batch[] {
+  return getBatches().filter(
+    (b) => b.academyId === academyId && (!onlyActive || b.status === "Active")
+  );
+}
+
+export function syncBatchEnrolledCounts(
+  getStudentBatchIds: () => Array<number | null | undefined>
+): Batch[] {
+  const counts = new Map<number, number>();
+  for (const batchId of getStudentBatchIds()) {
+    if (!batchId) continue;
+    counts.set(batchId, (counts.get(batchId) ?? 0) + 1);
+  }
+  const batches = getBatches().map((batch) => ({
+    ...batch,
+    enrolled: counts.get(batch.id) ?? 0,
+  }));
+  writeBatches(batches);
+  return batches;
+}

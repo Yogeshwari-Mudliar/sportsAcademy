@@ -27,12 +27,11 @@ export default function TablePagination({
 
   const start = (currentPage - 1) * pageSize + 1;
   const end = Math.min(currentPage * pageSize, totalItems);
-  const pages = getVisiblePages(currentPage, totalPages);
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-between gap-3 pt-4 sm:pt-6 border-t border-gray-100 mt-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 sm:pt-6 border-t border-gray-100 mt-4">
       <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-        <span className="text-xs text-gray-400 font-medium">
+        <span className="text-xs text-gray-400 font-medium text-center sm:text-left">
           Showing {start} to {end} of {totalItems} {label}
         </span>
         <label className="inline-flex items-center gap-2 text-xs text-gray-500 font-medium">
@@ -52,70 +51,29 @@ export default function TablePagination({
         </label>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition disabled:opacity-40 disabled:cursor-not-allowed"
-          aria-label="Previous page"
+          className="h-9 px-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-semibold inline-flex items-center gap-1 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ChevronLeft size={16} />
+          Previous
         </button>
-
-        {pages.map((page, idx) =>
-          page === "…" ? (
-            <span key={`ellipsis-${idx}`} className="text-gray-400 px-1 font-semibold text-xs">
-              …
-            </span>
-          ) : (
-            <button
-              key={page}
-              type="button"
-              onClick={() => onPageChange(page)}
-              className={`w-8 h-8 rounded-lg text-xs font-semibold flex items-center justify-center transition ${
-                page === currentPage
-                  ? "bg-[var(--accent)] text-white"
-                  : "hover:bg-gray-50 text-gray-600"
-              }`}
-            >
-              {page}
-            </button>
-          )
-        )}
-
+        <span className="text-xs text-gray-400 font-medium px-1 whitespace-nowrap">
+          Page {currentPage} of {totalPages}
+        </span>
         <button
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-500 transition disabled:opacity-40 disabled:cursor-not-allowed"
-          aria-label="Next page"
+          className="h-9 px-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 text-xs font-semibold inline-flex items-center gap-1 transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
+          Next
           <ChevronRight size={16} />
         </button>
       </div>
     </div>
   );
-}
-
-function getVisiblePages(current: number, total: number): Array<number | "…"> {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1);
-  }
-
-  const pages: Array<number | "…"> = [1];
-
-  if (current > 3) pages.push("…");
-
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-
-  for (let p = start; p <= end; p += 1) {
-    pages.push(p);
-  }
-
-  if (current < total - 2) pages.push("…");
-
-  pages.push(total);
-  return pages;
 }

@@ -3,6 +3,7 @@ import { Search, UserCheck, ShieldAlert, Sparkles, RotateCcw } from "lucide-reac
 import TableRowActions from "@/components/table/TableRowActions";
 import TableAddButton from "@/components/table/TableAddButton";
 import TablePagination from "@/components/table/TablePagination";
+import StatusDot from "@/components/table/StatusDot";
 import { useCanManageTables } from "@/hooks/useCanManageTables";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
@@ -295,9 +296,6 @@ const UserCategoryManager: React.FC<UserCategoryManagerProps> = ({ role }) => {
                 <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   Email
                 </th>
-                <th className="p-4 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                  Status
-                </th>
                 {canManage && (
                   <th className="p-4 text-center text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                     Actions
@@ -337,13 +335,14 @@ const UserCategoryManager: React.FC<UserCategoryManagerProps> = ({ role }) => {
                             {user.name.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-semibold  flex items-center gap-1.5">
-                              {user.name}
+                            <p className="font-semibold flex items-center gap-1.5 min-w-0">
+                              <span className="truncate" title={user.name}>{user.name}</span>
+                              <StatusDot status={user.status ?? "Active"} className="shrink-0" />
                               {role === "Admin" && (
-                                <Sparkles size={14} className="text-yellow-400" />
+                                <Sparkles size={14} className="text-yellow-400 shrink-0" />
                               )}
                               {role === "Super Admin" && (
-                                <Sparkles size={14} className="text-rose-400" />
+                                <Sparkles size={14} className="text-rose-400 shrink-0" />
                               )}
                             </p>
                             <p className="text-xs text-[var(--text-faint)] font-mono">
@@ -364,17 +363,6 @@ const UserCategoryManager: React.FC<UserCategoryManagerProps> = ({ role }) => {
                       <td className="p-2 text-[var(--text-muted)] font-medium">
                         {user.email}
                       </td>
-                      <td className="p-2">
-                        <span
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            (user.status ?? "Active") === "Active"
-                              ? "bg-green-50 text-green-600 border border-green-100"
-                              : "bg-red-50 text-red-500 border border-red-100"
-                          }`}
-                        >
-                          {user.status ?? "Active"}
-                        </span>
-                      </td>
                       {canManage && (
                         <td className="p-2">
                           <TableRowActions
@@ -390,7 +378,7 @@ const UserCategoryManager: React.FC<UserCategoryManagerProps> = ({ role }) => {
                 })
               ) : (
                 <tr>
-                  <td colSpan={canManage ? 6 : 5} className="p-12 text-center">
+                  <td colSpan={canManage ? 5 : 4} className="p-12 text-center">
                     <div className="flex flex-col items-center justify-center space-y-3">
                       <div className="p-2 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-500/80 animate-pulse">
                         <ShieldAlert size={28} />
