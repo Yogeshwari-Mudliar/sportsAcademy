@@ -106,6 +106,14 @@ export default function StudentAdmissionFields({
             ))}
           </select>
         </div>
+         <Field
+          label="Sport Experience"
+          name="sportExperience"
+          placeholder="e.g. 2 years school / club level"
+          defaultValue={initial?.sportExperience}
+          className={cls}
+          labelClassName={labelCls}
+        />
         <Field
           label="Parent / Guardian Name"
           name="parentName"
@@ -127,14 +135,7 @@ export default function StudentAdmissionFields({
           className={cls}
           labelClassName={labelCls}
         />
-        <Field
-          label="Sport Experience"
-          name="sportExperience"
-          placeholder="e.g. 2 years school / club level"
-          defaultValue={initial?.sportExperience}
-          className={cls}
-          labelClassName={labelCls}
-        />
+       
       </div>
       <div>
         <label className={labelCls}>Address</label>

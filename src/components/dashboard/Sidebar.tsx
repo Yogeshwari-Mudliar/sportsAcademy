@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { ChevronDown, Headphones, ChevronRight } from "lucide-react";
+import { ChevronDown, Headphones, ChevronRight, X } from "lucide-react";
 import {
   COACH_SIDEBAR,
   MANAGEMENT_SIDEBAR,
@@ -10,23 +10,28 @@ import {
   STUDENT_SIDEBAR,
   type SidebarItem,
 } from "../../constants/sidebar";
-import { useAppSelector } from "../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
+import { setSidebarCollapsed } from "../../features/ui/uiSlice";
 import { getCurrentUser } from "../../data/account";
 import { ROLE_LABELS, ROLES } from "../../constants/roles";
 import { PERMISSIONS_UPDATED_EVENT, hasPermission } from "../../data/permissions";
 import { useAppBase } from "../../hooks/useAppBase";
 import "../../styles/common/sidebar.css";
 
+const MOBILE_MQ = "(max-width: 1024px)";
+
 function SidebarLink({
   item,
   basePath,
   openSegment,
   onToggle,
+  onNavigate,
 }: {
   item: SidebarItem;
   basePath: string;
   openSegment: string | null;
   onToggle: (segment: string) => void;
+  onNavigate: () => void;
 }) {
   const location = useLocation();
   const Icon = item.icon;
@@ -61,6 +66,7 @@ function SidebarLink({
                   key={childPath}
                   to={childPath}
                   end={child.segment === "academies"}
+                  onClick={onNavigate}
                   className={({ isActive }) => `sidebar-sublink ${isActive ? "active" : ""}`}
                 >
                   {child.label}
@@ -77,6 +83,7 @@ function SidebarLink({
     <NavLink
       to={itemPath}
       end
+      onClick={onNavigate}
       className={({ isActive }) => `sidebar-link ${isActive ? "active" : ""}`}
     >
       <Icon size={18} className="sidebar-icon" />
@@ -86,6 +93,7 @@ function SidebarLink({
 }
 
 export default function Sidebar() {
+  const dispatch = useAppDispatch();
   const collapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
   const location = useLocation();
   const [permissionsVersion, setPermissionsVersion] = useState(0);
@@ -120,7 +128,6 @@ export default function Sidebar() {
     [baseSidebarGroups, permissionsVersion, role]
   );
 
-  // Auto-open the dropdown that matches current route (and close others)
   useEffect(() => {
     let active: string | null = null;
     for (const group of sidebarGroups) {
@@ -153,8 +160,14 @@ export default function Sidebar() {
     setOpenSegment((prev) => (prev === segment ? null : segment));
   };
 
+  const closeMobileDrawer = () => {
+    if (window.matchMedia(MOBILE_MQ).matches) {
+      dispatch(setSidebarCollapsed(true));
+    }
+  };
+
   return (
-    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+    <aside className={`sidebar ${collapsed ? "collapsed" : ""}`} aria-hidden={collapsed}>
       <div className="sidebar-brand">
         <div className="sidebar-brand-logo-container">
           <svg viewBox="0 0 100 100" className="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -177,6 +190,14 @@ export default function Sidebar() {
           </h1>
           <p>{ROLE_LABELS[role]}</p>
         </div>
+        <button
+          type="button"
+          className="sidebar-close-btn"
+          aria-label="Close sidebar"
+          onClick={() => dispatch(setSidebarCollapsed(true))}
+        >
+          <X size={18} />
+        </button>
       </div>
 
       <nav className="sidebar-nav">
@@ -190,6 +211,7 @@ export default function Sidebar() {
                 basePath={basePath}
                 openSegment={openSegment}
                 onToggle={handleToggle}
+                onNavigate={closeMobileDrawer}
               />
             ))}
           </div>

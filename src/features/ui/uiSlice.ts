@@ -18,7 +18,10 @@ const initialState: UiState = {
     title: "Dashboard",
     breadcrumb: ["Dashboard"],
   },
-  sidebarCollapsed: false,
+  sidebarCollapsed:
+    typeof window !== "undefined"
+      ? window.matchMedia("(max-width: 1024px)").matches
+      : false,
   themeColor: getStoredThemeColor(),
 };
 
@@ -32,6 +35,9 @@ const uiSlice = createSlice({
     toggleSidebar(state) {
       state.sidebarCollapsed = !state.sidebarCollapsed;
     },
+    setSidebarCollapsed(state, action: PayloadAction<boolean>) {
+      state.sidebarCollapsed = action.payload;
+    },
     setThemeColor(state, action: PayloadAction<string>) {
       state.themeColor = action.payload;
       storeThemeColor(action.payload);
@@ -39,5 +45,5 @@ const uiSlice = createSlice({
   },
 });
 
-export const { setPageHeader, toggleSidebar, setThemeColor } = uiSlice.actions;
+export const { setPageHeader, toggleSidebar, setSidebarCollapsed, setThemeColor } = uiSlice.actions;
 export default uiSlice.reducer;

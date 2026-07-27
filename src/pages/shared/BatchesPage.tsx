@@ -264,69 +264,110 @@ export default function BatchesPage() {
             No batches found matching search/filter criteria.
           </div>
         ) : (
-          <div className="w-full overflow-hidden">
-            <table className="w-full table-fixed border-collapse">
-              <thead>
-                <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
-                  <th className="py-3 px-2 w-[18%]">Batch</th>
-                  <th className="py-3 px-2 w-[18%]">Academy</th>
-                  <th className="py-3 px-2 w-[14%]">Coach</th>
-                  <th className="py-3 px-2 w-[16%]">Timing</th>
-                  <th className="py-3 px-2 w-[10%]">Days</th>
-                  <th className="py-3 px-2 w-[10%]">Capacity</th>
-                  {canManage && <th className="py-3 px-2 w-[8%] text-center">Actions</th>}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
-                {paginated.map((batch) => (
-                  <tr key={batch.id} className="hover:bg-gray-50/50 transition">
-                    <td className="py-3 px-2 overflow-hidden">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="font-semibold truncate min-w-0" title={batch.name}>
-                          {batch.name}
-                        </span>
+          <>
+            <ul className="lg:hidden flex flex-col gap-3">
+              {paginated.map((batch) => (
+                <li
+                  key={batch.id}
+                  className="rounded-xl border border-gray-100 bg-gray-50/50 p-3.5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm truncate">{batch.name}</p>
                         <StatusDot status={batch.status} className="shrink-0" />
                       </div>
-                    </td>
-                    <td className="py-3 px-2 text-gray-600 overflow-hidden">
-                      <span className="block truncate" title={batch.academyName}>
-                        {truncateText(batch.academyName, 24)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-gray-600 overflow-hidden">
-                      <span className="block truncate" title={batch.coachName}>
-                        {batch.coachName}
-                      </span>
-                    </td>
-                    <td className="py-3 px-2 text-gray-600 overflow-hidden">
-                      <span className="block truncate" title={batch.timing}>
-                        {batch.timing}
-                      </span>
-                    </td>
-                    <td
-                      className="py-3 px-2 text-gray-600 overflow-hidden tracking-wide"
-                      title={batch.days}
-                    >
-                      <span className="block truncate">{abbreviateDays(batch.days)}</span>
-                    </td>
-                    <td className="py-3 px-2 text-gray-600">
-                      {batch.enrolled}/{batch.capacity}
-                    </td>
-                    {canManage && (
-                      <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>
-                        <TableRowActions
-                          onView={() => setViewing(batch)}
-                          onEdit={() => setEditing(batch)}
-                          onToggleStatus={() => handleToggleStatus(batch)}
-                          isActive={batch.status === "Active"}
-                        />
-                      </td>
-                    )}
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        {truncateText(batch.academyName, 32)}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-500">
+                        <span>Coach: {batch.coachName}</span>
+                        <span>{batch.timing}</span>
+                        <span>{abbreviateDays(batch.days)}</span>
+                        <span>
+                          {batch.enrolled}/{batch.capacity}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {canManage && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
+                      <TableRowActions
+                        onView={() => setViewing(batch)}
+                        onEdit={() => setEditing(batch)}
+                        onToggleStatus={() => handleToggleStatus(batch)}
+                        isActive={batch.status === "Active"}
+                      />
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+
+            <div className="hidden lg:block w-full overflow-x-auto">
+              <table className="w-full min-w-[700px] table-fixed border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
+                    <th className="py-3 px-2 w-[18%]">Batch</th>
+                    <th className="py-3 px-2 w-[18%]">Academy</th>
+                    <th className="py-3 px-2 w-[14%]">Coach</th>
+                    <th className="py-3 px-2 w-[16%]">Timing</th>
+                    <th className="py-3 px-2 w-[10%]">Days</th>
+                    <th className="py-3 px-2 w-[10%]">Capacity</th>
+                    {canManage && <th className="py-3 px-2 w-[8%] text-center">Actions</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {paginated.map((batch) => (
+                    <tr key={batch.id} className="hover:bg-gray-50/50 transition">
+                      <td className="py-3 px-2 overflow-hidden">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-semibold truncate min-w-0" title={batch.name}>
+                            {batch.name}
+                          </span>
+                          <StatusDot status={batch.status} className="shrink-0" />
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 text-gray-600 overflow-hidden">
+                        <span className="block truncate" title={batch.academyName}>
+                          {truncateText(batch.academyName, 24)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-gray-600 overflow-hidden">
+                        <span className="block truncate" title={batch.coachName}>
+                          {batch.coachName}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-gray-600 overflow-hidden">
+                        <span className="block truncate" title={batch.timing}>
+                          {batch.timing}
+                        </span>
+                      </td>
+                      <td
+                        className="py-3 px-2 text-gray-600 overflow-hidden tracking-wide"
+                        title={batch.days}
+                      >
+                        <span className="block truncate">{abbreviateDays(batch.days)}</span>
+                      </td>
+                      <td className="py-3 px-2 text-gray-600">
+                        {batch.enrolled}/{batch.capacity}
+                      </td>
+                      {canManage && (
+                        <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>
+                          <TableRowActions
+                            onView={() => setViewing(batch)}
+                            onEdit={() => setEditing(batch)}
+                            onToggleStatus={() => handleToggleStatus(batch)}
+                            isActive={batch.status === "Active"}
+                          />
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         <TablePagination

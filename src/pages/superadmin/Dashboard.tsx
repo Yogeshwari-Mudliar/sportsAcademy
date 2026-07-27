@@ -155,8 +155,8 @@ export default function Dashboard() {
               </Link>
             </div>
 
-            <div className="w-full overflow-hidden">
-              <table className="w-full table-fixed text-left border-collapse">
+            <div className="w-full overflow-x-auto">
+              <table className="w-full min-w-[520px] table-fixed text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                     <th className="pb-3 w-[45%]">Academy Name</th>

@@ -12,6 +12,8 @@ import "../../styles/superadmin/createAcademy.css";
 
 interface AcademyFormProps {
   mode?: "create" | "edit";
+  /** Tighter stacked layout for dialogs / narrow containers */
+  compact?: boolean;
   initialData?: AcademyFormData;
   lockedFields?: (keyof AcademyFormData)[];
   submitLabel?: string;
@@ -21,6 +23,7 @@ interface AcademyFormProps {
 
 export default function AcademyForm({
   mode = "create",
+  compact = false,
   initialData,
   lockedFields = [],
   submitLabel,
@@ -92,7 +95,7 @@ export default function AcademyForm({
   const isLocked = (field: keyof AcademyFormData) => lockedFields.includes(field);
 
   return (
-    <form className="academy-form" onSubmit={handleSubmit}>
+    <form className={`academy-form ${compact ? "academy-form--modal" : ""}`} onSubmit={handleSubmit}>
       <div className="academy-grid">
         <section className="panel">
           <h2 className="panel-title">Academy Information</h2>

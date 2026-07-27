@@ -56,29 +56,29 @@ export default function LandingSlider({ data }: LandingSliderProps) {
         style={{ background: "color-mix(in srgb, var(--landing-primary) 16%, transparent)" }}
       />
 
-      <div className="relative z-10 mx-auto grid min-h-[92svh] max-w-7xl items-center gap-10 px-4 py-28 sm:px-6 lg:grid-cols-2 lg:gap-14">
+      <div className="relative z-10 mx-auto grid min-h-[92svh] max-w-7xl items-center gap-8 px-4 py-20 sm:gap-10 sm:px-6 sm:py-28 lg:grid-cols-2 lg:gap-14">
         {/* Copy — own column so it never sits under the image */}
-        <div ref={copyRef} className="relative z-20 max-w-xl lg:max-w-none">
+        <div ref={copyRef} className="relative z-20 max-w-xl lg:max-w-none order-2 lg:order-1">
           <div className="mb-4 overflow-hidden">
             <p
               data-split
-              className="inline-flex items-center rounded-full border border-indigo-100 bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--landing-primary)] shadow-sm backdrop-blur"
+              className="inline-flex max-w-full items-center rounded-full border border-indigo-100 bg-white/90 px-3 py-1 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] sm:tracking-[0.22em] text-[var(--landing-primary)] shadow-sm backdrop-blur"
             >
-              {data.academyName}
+              <span className="truncate">{data.academyName}</span>
             </p>
           </div>
 
           <div className="mb-5 overflow-hidden">
             <h1
               data-split
-              className="landing-display text-4xl font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-5xl md:text-[3.25rem]"
+              className="landing-display text-[1.85rem] font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl md:text-[3.25rem]"
             >
               {title}
             </h1>
           </div>
 
-          <div className="mb-9 max-w-lg overflow-hidden">
-            <p data-split className="text-base font-medium leading-relaxed text-slate-600 sm:text-lg">
+          <div className="mb-8 sm:mb-9 max-w-lg overflow-hidden">
+            <p data-split className="text-sm font-medium leading-relaxed text-slate-600 sm:text-lg">
               {subtitle}
             </p>
           </div>
@@ -89,7 +89,7 @@ export default function LandingSlider({ data }: LandingSliderProps) {
                 data-hero-cta
                 data-magnetic
                 href="#register"
-                className="magnetic inline-flex items-center rounded-full px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-violet-300/40"
+                className="magnetic inline-flex items-center rounded-full px-6 py-3 sm:px-7 sm:py-3.5 text-sm font-bold text-white shadow-lg shadow-violet-300/40"
                 style={{ background: "var(--landing-accent)" }}
               >
                 Register as Student
@@ -99,7 +99,7 @@ export default function LandingSlider({ data }: LandingSliderProps) {
               data-hero-cta
               data-magnetic
               href="#features"
-              className="magnetic inline-flex rounded-full border border-slate-200 bg-white/80 px-6 py-3.5 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur hover:border-violet-200"
+              className="magnetic inline-flex rounded-full border border-slate-200 bg-white/80 px-5 py-3 sm:px-6 sm:py-3.5 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur hover:border-violet-200"
             >
               Explore academy
             </a>
@@ -107,8 +107,8 @@ export default function LandingSlider({ data }: LandingSliderProps) {
         </div>
 
         {/* Image column — watermark stays inside this box only */}
-        <div className="relative z-10 mx-auto w-full max-w-xl lg:mx-0 lg:max-w-none">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] rounded-br-[3.5rem] shadow-2xl shadow-indigo-200/50 sm:aspect-[5/4] lg:aspect-auto lg:min-h-[28rem] lg:h-[min(70vh,520px)]">
+        <div className="relative z-10 mx-auto w-full max-w-xl order-1 lg:order-2 lg:mx-0 lg:max-w-none">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] rounded-br-[2.5rem] shadow-2xl shadow-indigo-200/50 sm:aspect-[5/4] sm:rounded-[2rem] sm:rounded-br-[3.5rem] lg:aspect-auto lg:min-h-[28rem] lg:h-[min(70vh,520px)]">
             {bg ? (
               <img src={bg} alt="" className="h-full w-full object-cover" />
             ) : (

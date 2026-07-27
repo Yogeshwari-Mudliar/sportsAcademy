@@ -12,7 +12,7 @@ export default function LandingFeatures({ data }: LandingFeaturesProps) {
   return (
     <section id="features" className="relative py-20 md:py-28 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="mb-12 md:mb-16 max-w-3xl" data-reveal>
+        <div className="mb-12 md:mb-16 max-w-3xl" data-reveal >
           <p className="text-[11px] uppercase tracking-[0.28em] text-violet-500 font-semibold mb-3">
             Why join
           </p>

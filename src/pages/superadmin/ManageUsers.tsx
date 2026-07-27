@@ -370,8 +370,8 @@ export default function ManageUsers() {
         </div>
 
         {/* Users Table */}
-        <div className="w-full overflow-hidden -mx-6 px-6">
-            <table className="w-full table-fixed border-collapse">
+        <div className="w-full overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
+            <table className="w-full min-w-[720px] table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
                   <th className="py-3 px-2 w-[5%] text-center">#</th>

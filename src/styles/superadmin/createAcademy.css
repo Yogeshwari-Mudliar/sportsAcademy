@@ -1,12 +1,15 @@
 .academy-form {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  width: 100%;
 }
 
 .academy-grid {
   display: grid;
   grid-template-columns: 1.45fr 1fr;
   gap: 20px;
+  min-width: 0;
 }
 
 @media (max-width: 1180px) {
@@ -15,10 +18,48 @@
   }
 }
 
+/* Edit modal: always stack — media queries use viewport, not modal width */
+.academy-form--modal .academy-grid {
+  grid-template-columns: 1fr;
+}
+
+.academy-form--modal .form-row,
+.academy-form--modal .form-row.three {
+  grid-template-columns: 1fr 1fr;
+}
+
+.academy-form--modal .image-row {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 640px) {
+  .academy-form--modal .form-row,
+  .academy-form--modal .form-row.three {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .right-column {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
 }
 
 .panel {
@@ -26,13 +67,14 @@
   border: 1px solid var(--border-soft);
   border-radius: 16px;
   padding: 24px;
+  min-width: 0;
 }
 
 .panel-title {
   margin: 0 0 22px;
   font-size: 18px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 /* Form fields */
@@ -44,6 +86,13 @@
 }
 .form-row.three {
   grid-template-columns: 1fr 1fr 1fr;
+}
+
+@media (max-width: 768px) {
+  .form-row,
+  .form-row.three {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
@@ -76,12 +125,13 @@
 
 .form-input {
   width: 100%;
+  max-width: 100%;
   height: 46px;
   background: var(--bg-input);
   border: 1px solid var(--border-soft);
   border-radius: 10px;
   padding: 0 14px;
-  color: #fff;
+  color: var(--text-primary);
   font-size: 14px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -150,7 +200,7 @@ select.form-input:disabled {
   border: 1px solid var(--border-soft);
   border-right: none;
   border-radius: 10px 0 0 10px;
-  color: #e2e8f0;
+  color: var(--text-primary);
   font-size: 14px;
   white-space: nowrap;
 }
@@ -183,52 +233,52 @@ select.form-input:disabled {
 /* Facilities */
 .facility-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
   gap: 10px;
-}
-
-@media (max-width: 1200px) {
-  .facility-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 900px) {
-  .facility-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  width: 100%;
 }
 
 @media (max-width: 560px) {
   .facility-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
   }
 }
 
 .facility-chip {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+  min-width: 0;
   padding: 10px 12px;
   background: var(--bg-input);
   border: 1px solid var(--border-soft);
   border-radius: 10px;
   font-size: 12.5px;
+  line-height: 1.35;
   color: var(--text-muted);
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
 .facility-chip input {
   accent-color: var(--accent);
   width: 15px;
   height: 15px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.facility-chip span {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .facility-chip.checked {
   border-color: var(--accent);
-  color: #fff;
-  background: rgba(245, 180, 35, 0.08);
+  color: var(--text-primary);
+  background: rgba(255, 107, 0, 0.1);
 }
 
 /* Image uploader */
@@ -247,7 +297,7 @@ select.form-input:disabled {
 .uploader-dropzone {
   width: 100%;
   background: var(--bg-input);
-  border: 1.5px dashed rgba(255, 255, 255, 0.14);
+  border: 1.5px dashed color-mix(in srgb, var(--text-primary) 18%, transparent);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -277,7 +327,7 @@ select.form-input:disabled {
 
 .uploader-main {
   font-size: 13px;
-  color: #cbd5e1;
+  color: var(--text-muted);
 }
 
 .uploader-sub {
@@ -319,16 +369,16 @@ select.form-input:disabled {
 .btn-ghost {
   background: transparent;
   border-color: var(--border-soft);
-  color: #e2e8f0;
+  color: var(--text-primary);
 }
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--text-primary) 6%, transparent);
 }
 
 .btn-primary {
   background: var(--accent);
-  color: #08152b;
+  color: #fff;
 }
 .btn-primary:hover {
-  background: #ffc23d;
+  background: #e85f00;
 }

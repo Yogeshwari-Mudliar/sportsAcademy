@@ -11,7 +11,7 @@ import { ROLE_LABELS } from "../../constants/roles";
 export default function Header() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { pageHeader, sidebarCollapsed } = useAppSelector((state) => state.ui);
+  const { pageHeader } = useAppSelector((state) => state.ui);
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState(() => getCurrentUser());
   const userMenuRef = useRef<HTMLDivElement | null>(null);
@@ -81,12 +81,10 @@ export default function Header() {
           >
             <img src="https://i.pravatar.cc/100?img=12" alt="User" />
 
-            {sidebarCollapsed && (
-              <div className="header-user-info">
-                <h4>{user?.name || "User"}</h4>
-                <span>{user?.email || ""}</span>
-              </div>
-            )}
+            <div className="header-user-info">
+              <h4>{user?.name || "User"}</h4>
+              <span>{user?.email || ""}</span>
+            </div>
             <ChevronDown size={16} className={`header-user-caret ${open ? "open" : ""}`} />
           </button>
 

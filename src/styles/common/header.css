@@ -36,11 +36,19 @@
   color: var(--text-primary);
 }
 
+.header-title {
+  min-width: 0;
+}
+
 .header-title h2 {
   margin: 0;
   font-size: 20px;
   font-weight: 700;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(52vw, 420px);
 }
 
 .header-breadcrumb {
@@ -50,6 +58,10 @@
   margin-top: 2px;
   font-size: 12px;
   color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(52vw, 420px);
 }
 
 .crumb-sep {
@@ -248,21 +260,61 @@
 
 @media (max-width: 1024px) {
   .header-search {
-    width: 200px;
+    width: 180px;
   }
   .header-search-shortcut {
     display: none;
   }
+  .header-menu-btn {
+    background: var(--bg-input);
+    color: var(--text-primary);
+  }
 }
 
 @media (max-width: 768px) {
+  .dashboard-header {
+    height: 64px;
+    padding: 0 12px;
+    gap: 10px;
+  }
+  .header-left {
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  .header-title h2 {
+    font-size: 16px;
+    max-width: 46vw;
+  }
+  .header-breadcrumb {
+    display: none;
+  }
   .header-search {
-    display: none; /* Hide search bar on mobile */
+    display: none;
   }
   .header-user-info {
-    display: none; /* Hide info on small mobile */
+    display: none;
   }
-  .dashboard-header {
-    padding: 0 16px;
+  .header-right {
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .notification-btn,
+  .header-user img {
+    width: 36px;
+    height: 36px;
+  }
+  .header-user-menu {
+    width: min(280px, calc(100vw - 24px));
+    right: -4px;
+  }
+  .header-user-caret {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .header-title h2 {
+    max-width: 38vw;
   }
 }

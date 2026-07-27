@@ -286,8 +286,62 @@ export default function MembersTable({
         <div className="py-12 text-center text-gray-400 font-medium text-sm">No records found.</div>
       ) : (
         <>
-          <div className="w-full overflow-hidden">
-            <table className="w-full table-fixed border-collapse">
+          {/* Mobile cards */}
+          <ul className="lg:hidden flex flex-col gap-3">
+            {paginated.map((member) => {
+              const academy = getAcademyById(member.academyId);
+              const academyName = academy?.name ?? "—";
+              return (
+                <li
+                  key={member.id}
+                  className="rounded-xl border border-gray-100 bg-gray-50/50 p-3.5"
+                >
+                  <div className="flex items-start gap-3">
+                    <img
+                      src={member.avatar}
+                      alt=""
+                      className="w-11 h-11 rounded-full object-cover border shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="font-semibold text-sm text-[var(--text-primary)] truncate">
+                          {member.name}
+                        </p>
+                        <StatusDot status={member.status} className="shrink-0" />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 break-all">{member.email}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{member.phone}</p>
+                      <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-500">
+                        {showAcademyColumn && <span>{truncateText(academyName, 28)}</span>}
+                        {showLocationColumn && academy?.city && <span>{academy.city}</span>}
+                        {canAssignBatch && (
+                          <span>{member.batchName || "No batch"}</span>
+                        )}
+                        <span>Joined {member.joinedOn}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {canManage && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
+                      <TableRowActions
+                        onView={() => setViewing(member)}
+                        onEdit={() => setEditing(member)}
+                        onToggleStatus={() => handleToggleStatus(member)}
+                        onAssignBatch={
+                          canAssignBatch ? () => setAssigning(member) : undefined
+                        }
+                        isActive={member.status === "Active"}
+                      />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Desktop table */}
+          <div className="hidden lg:block w-full overflow-x-auto">
+            <table className="w-full min-w-[720px] table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
                   <th className={`py-3 px-2 ${showAcademyColumn ? "w-[18%]" : "w-[22%]"}`}>Name</th>

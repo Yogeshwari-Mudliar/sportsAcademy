@@ -297,80 +297,139 @@ export default function TournamentsPage() {
             No tournaments found matching search/filter criteria.
           </div>
         ) : (
-          <div className="w-full overflow-hidden">
-            <table className="w-full table-fixed border-collapse">
-              <thead>
-                <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
-                  <th className="py-3 px-2 w-[18%]">Tournament</th>
-                  <th className="py-3 px-2 w-[14%]">Academy</th>
-                  <th className="py-3 px-2 w-[10%]">Category</th>
-                  <th className="py-3 px-2 w-[9%]">City</th>
-                  <th className="py-3 px-2 w-[9%]">Format</th>
-                  <th className="py-3 px-2 w-[11%]">Start</th>
-                  <th className="py-3 px-2 w-[11%]">End</th>
-                  <th className="py-3 px-2 w-[7%]">Teams</th>
-                  <th className="py-3 px-2 w-[8%] text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
-                {paginated.map((tournament) => {
-                  const canEdit = canManageTournament(user, tournament);
-                  return (
-                    <tr key={tournament.id} className="hover:bg-gray-50/50 transition">
-                      <td className="py-3 px-2 overflow-hidden">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="font-semibold truncate flex-1 min-w-0" title={tournament.name}>
-                            {tournament.name}
+          <>
+            <ul className="lg:hidden flex flex-col gap-3">
+              {paginated.map((tournament) => {
+                const canEdit = canManageTournament(user, tournament);
+                return (
+                  <li
+                    key={tournament.id}
+                    className="rounded-xl border border-gray-100 bg-gray-50/50 p-3.5"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <p className="font-semibold text-sm truncate flex-1">{tournament.name}</p>
+                      <StatusDot status={tournament.status} className="shrink-0" />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1 truncate">
+                      {truncateText(tournament.academyName, 32)} · {tournament.city}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                      <span
+                        className={`px-2 py-0.5 rounded-full font-semibold border ${
+                          tournament.category === "External"
+                            ? "bg-sky-50 text-sky-700 border-sky-100"
+                            : "bg-violet-50 text-violet-700 border-violet-100"
+                        }`}
+                      >
+                        {tournament.category}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full font-semibold bg-orange-50 text-orange-600 border border-orange-100">
+                        {tournament.format}
+                      </span>
+                      <span className="text-gray-500">
+                        {formatDisplayDate(tournament.startDate)} –{" "}
+                        {formatDisplayDate(tournament.endDate)}
+                      </span>
+                      <span className="text-gray-500">{tournament.teams} teams</span>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
+                      <TableRowActions
+                        onView={() => setViewing(tournament)}
+                        onEdit={canEdit ? () => setEditing(tournament) : undefined}
+                        onToggleStatus={canEdit ? () => handleToggleStatus(tournament) : undefined}
+                        canEdit={canEdit}
+                        isActive={tournament.status === "Active"}
+                      />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="hidden lg:block w-full overflow-x-auto">
+              <table className="w-full min-w-[860px] table-fixed border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left bg-gray-50/50">
+                    <th className="py-3 px-2 w-[18%]">Tournament</th>
+                    <th className="py-3 px-2 w-[14%]">Academy</th>
+                    <th className="py-3 px-2 w-[10%]">Category</th>
+                    <th className="py-3 px-2 w-[9%]">City</th>
+                    <th className="py-3 px-2 w-[9%]">Format</th>
+                    <th className="py-3 px-2 w-[11%]">Start</th>
+                    <th className="py-3 px-2 w-[11%]">End</th>
+                    <th className="py-3 px-2 w-[7%]">Teams</th>
+                    <th className="py-3 px-2 w-[8%] text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {paginated.map((tournament) => {
+                    const canEdit = canManageTournament(user, tournament);
+                    return (
+                      <tr key={tournament.id} className="hover:bg-gray-50/50 transition">
+                        <td className="py-3 px-2 overflow-hidden">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className="font-semibold truncate flex-1 min-w-0"
+                              title={tournament.name}
+                            >
+                              {tournament.name}
+                            </span>
+                            <StatusDot status={tournament.status} className="shrink-0" />
+                          </div>
+                        </td>
+                        <td className="py-3 px-2 text-gray-600 overflow-hidden">
+                          <span className="block truncate" title={tournament.academyName}>
+                            {truncateText(tournament.academyName, 24)}
                           </span>
-                          <StatusDot status={tournament.status} className="shrink-0" />
-                        </div>
-                      </td>
-                      <td className="py-3 px-2 text-gray-600 overflow-hidden">
-                        <span className="block truncate" title={tournament.academyName}>
-                          {truncateText(tournament.academyName, 24)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 overflow-hidden">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
-                            tournament.category === "External"
-                              ? "bg-sky-50 text-sky-700 border-sky-100"
-                              : "bg-violet-50 text-violet-700 border-violet-100"
-                          }`}
-                        >
-                          {tournament.category}
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 text-gray-600 overflow-hidden">
-                        <span className="block truncate">{tournament.city}</span>
-                      </td>
-                      <td className="py-3 px-2 overflow-hidden">
-                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-600 border border-orange-100">
-                          {tournament.format}
-                        </span>
-                      </td>
-                      <td className="py-3 px-2 text-gray-600 overflow-hidden">
-                        <span className="block truncate">{formatDisplayDate(tournament.startDate)}</span>
-                      </td>
-                      <td className="py-3 px-2 text-gray-600 overflow-hidden">
-                        <span className="block truncate">{formatDisplayDate(tournament.endDate)}</span>
-                      </td>
-                      <td className="py-3 px-2 text-gray-600">{tournament.teams}</td>
-                      <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>
-                        <TableRowActions
-                          onView={() => setViewing(tournament)}
-                          onEdit={canEdit ? () => setEditing(tournament) : undefined}
-                          onToggleStatus={canEdit ? () => handleToggleStatus(tournament) : undefined}
-                          canEdit={canEdit}
-                          isActive={tournament.status === "Active"}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="py-3 px-2 overflow-hidden">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                              tournament.category === "External"
+                                ? "bg-sky-50 text-sky-700 border-sky-100"
+                                : "bg-violet-50 text-violet-700 border-violet-100"
+                            }`}
+                          >
+                            {tournament.category}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-gray-600 overflow-hidden">
+                          <span className="block truncate">{tournament.city}</span>
+                        </td>
+                        <td className="py-3 px-2 overflow-hidden">
+                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-600 border border-orange-100">
+                            {tournament.format}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-gray-600 overflow-hidden">
+                          <span className="block truncate">
+                            {formatDisplayDate(tournament.startDate)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-gray-600 overflow-hidden">
+                          <span className="block truncate">
+                            {formatDisplayDate(tournament.endDate)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-gray-600">{tournament.teams}</td>
+                        <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>
+                          <TableRowActions
+                            onView={() => setViewing(tournament)}
+                            onEdit={canEdit ? () => setEditing(tournament) : undefined}
+                            onToggleStatus={
+                              canEdit ? () => handleToggleStatus(tournament) : undefined
+                            }
+                            canEdit={canEdit}
+                            isActive={tournament.status === "Active"}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         <TablePagination

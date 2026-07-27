@@ -1,18 +1,43 @@
 .sidebar {
-  width: 250px;
-  min-width: 250px;
+  width: min(280px, 86vw);
+  min-width: min(280px, 86vw);
   background: var(--bg-nav);
   border-right: 1px solid var(--border-soft);
   height: 100vh;
+  height: 100dvh;
   position: sticky;
   top: 0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  z-index: 40;
 }
 
 .sidebar.collapsed {
   display: none;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+.sidebar-close-btn {
+  display: none;
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sidebar-close-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
 }
 
 @media (max-width: 1024px) {
@@ -21,15 +46,47 @@
     left: 0;
     top: 0;
     bottom: 0;
-    z-index: 999;
+    z-index: 1000;
     transform: translateX(0);
-    transition: transform 0.3s ease, visibility 0.3s;
-    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+    transition: transform 0.28s ease, visibility 0.28s;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.28);
+    display: flex !important;
   }
   .sidebar.collapsed {
-    transform: translateX(-100%);
-    display: flex !important;
+    transform: translateX(-105%);
     visibility: hidden;
+    pointer-events: none;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 990;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: rgba(8, 21, 44, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+    cursor: pointer;
+  }
+
+  .sidebar-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar-close-btn {
+    display: grid;
+  }
+}
+
+@media (min-width: 1025px) {
+  .sidebar {
+    width: 250px;
+    min-width: 250px;
   }
 }
 
@@ -46,8 +103,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 22px 20px;
+  padding: 18px 16px;
   border-bottom: 1px solid var(--border-soft);
+}
+
+.sidebar-brand-text {
+  min-width: 0;
+  flex: 1;
 }
 
 .sidebar-brand-logo-container {
@@ -64,11 +126,14 @@
 
 .sidebar-brand-text h1 {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.5px;
   color: #fff;
   line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar-brand-text h1 span {
